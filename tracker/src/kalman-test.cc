@@ -44,13 +44,13 @@ void kalman_track::kalman_all(std::vector<physics::digi_hit *> trackhits, seed *
 
   while (status == 1)
   {
-//    seed filt_seed = choose_seed(current_seed);
+    seed filt_seed = choose_seed(current_seed);
 
-    init_seed_info(current_seed);
-//    init_seed_info(&filt_seed);
+//    init_seed_info(current_seed);
+    init_seed_info(&filt_seed);
 
-    init_matrices(current_seed);
-//    init_matrices(&filt_seed);
+//    init_matrices(current_seed);
+    init_matrices(&filt_seed);
 
     init_first_state();
 
@@ -99,7 +99,7 @@ seed kalman_track::choose_seed(seed *current_seed)
   }
   else {
     physics::digi_hit* lowest = layer_hits[layers[0]][0];
-    physics::digi_hit* second_lowest = layer_hits[layers[1]][0];
+    physics::digi_hit* second_lowest = layer_hits[layers.back()][0];
 
     filt_seed = seed(lowest,second_lowest); // seed with bottom hits (we've chosen hits already)
   }

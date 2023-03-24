@@ -455,6 +455,7 @@ void KalmanFilter::Q_update(double dy, double a, double b, double c)
 
   Q += jac * P * jac.transpose(); // Prediction contribution to process noise
 
+  //Q += jac * P * jac.transpose(); // Debug only, set Q =  0. Comment this line for normal use
 }
 
 void KalmanFilter::init_means(const Eigen::VectorXd x0, const Eigen::VectorXd q,

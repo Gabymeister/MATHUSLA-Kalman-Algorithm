@@ -9,7 +9,7 @@ project(MLTracker)
 
 
 find_package(ROOT REQUIRED COMPONENTS MathCore Minuit)
-find_package(dlib REQUIRED)
+find_package(dlib REQUIRED  PATHS ~/home/mathusla/dlib-19.24/install)
 find_package(BLAS REQUIRED)
 find_package(Eigen3 REQUIRED)
 
