@@ -77,7 +77,8 @@ public:
       update_matrices(hit);
 
 //      Eigen::VectorXd x_hat_new_temp = A * x_hat;
-      Eigen::VectorXd x_hat_new_temp = A * position;
+//      Eigen::VectorXd x_hat_new_temp = A * position;
+      Eigen::VectorXd x_hat_new_temp = f_matrix * position;
 
       if (initialized) {
         P_temp = A * P * A.transpose() + Q;
@@ -237,7 +238,7 @@ public:
 
 private:
   // Matrices for computation
-  Eigen::MatrixXd A, C, Q, P, K, P0, err_metric, B, D, R;
+  Eigen::MatrixXd A, C, Q, P, K, P0, err_metric, B, D, R, f_matrix;
 
   // System dimensions
   int m, n;

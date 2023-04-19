@@ -29,7 +29,8 @@ public:
                 detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2) };
 		}
 
-		return {  detector::time_resolution * (constants::c/constants::optic_fiber_n)/ sqrt(2), (max-min)/sqrt(12.), detector::scintillator_width/sqrt(12.) };
+		//return {  detector::time_resolution * (constants::c/constants::optic_fiber_n)/ sqrt(2), (max-min)/sqrt(12.), detector::scintillator_width/sqrt(12.) };
+		return {  detector::time_resolution * (constants::c/constants::optic_fiber_n)/ sqrt(2), detector::scintillator_thickness/sqrt(12.), detector::scintillator_width/sqrt(12.) };
 
 	}
 

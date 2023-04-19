@@ -33,7 +33,7 @@ KalmanFilter::KalmanFilter(
     const Eigen::MatrixXd &Q,
     const Eigen::MatrixXd &R,
     const Eigen::MatrixXd &P)
-    : A(A), C(C), Q(Q), R(R), P0(P),
+    : A(A), C(C), Q(Q), R(R), P0(P), f_matrix(A),
       m(C.rows()), n(A.rows()), dy(dy), initialized(false),
       I(n, n), x_hat(n), x_hat_new(n)
 {
@@ -137,7 +137,8 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
 //  update_matrices(y_list[0]);
   update_matrices(y_list[hit_inds[0]]);
 
-  x_hat_new = A * x_hat;
+  //x_hat_new = A * x_hat;
+  x_hat_new = f_matrix * x_hat; // In EKF, we should use the non-linear function to predict the state, and use the Jacobian A to predict the covariance.
 
   P = A * P * A.transpose() + Q;
   K = P * C.transpose() * (C * P * C.transpose() + R).inverse();
@@ -208,7 +209,7 @@ void KalmanFilter::king_moves_algorithm(const std::vector<physics::digi_hit *> y
 //    if (i == hit_inds[1])
     {
       update_matrices(y_list[i]);
-      x_hat_new = A * x_hat;
+      x_hat_new = f_matrix * x_hat;
 
       // residue for the hit
       Eigen::VectorXd res(3);
@@ -331,13 +332,19 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
 //    dy = a_hit->y - y_val;
 
 
-    A << 1.0, .0, .0, dy / x_hat[4], .0, .0,
+    f_matrix << 1.0, .0, .0, dy / x_hat[4], .0, .0,
       .0, 1.0, .0, .0, dy / (x_hat[4] * x_hat[4]), .0,
       .0, .0, 1.0, .0, .0, dy / x_hat[4],
       .0, .0, .0, 1.0, .0, .0,
       .0, .0, .0, .0, 1.0, .0,
       .0, .0, .0, .0, .0, 1.0;
 
+    A << 1.0, .0, .0, dy / x_hat[4], -dy* x_hat[3]/(x_hat[4] * x_hat[4]), .0,
+      .0, 1.0, .0, .0, -dy / (x_hat[4] * x_hat[4]), .0,
+      .0, .0, 1.0, .0, -dy* x_hat[5]/(x_hat[4] * x_hat[4]), dy / x_hat[4],
+      .0, .0, .0, 1.0, .0, .0,
+      .0, .0, .0, .0, 1.0, .0,
+      .0, .0, .0, .0, .0, 1.0;
 /*
     double dt = a_hit->t - x_hat[1];
 
@@ -455,7 +462,7 @@ void KalmanFilter::Q_update(double dy, double a, double b, double c)
 
   Q += jac * P * jac.transpose(); // Prediction contribution to process noise
 
-  //Q += jac * P * jac.transpose(); // Debug only, set Q =  0. Comment this line for normal use
+ // Q = Eigen::MatrixXd::Zero(6, 6); // Debug only, set Q =  0. Comment this line for normal use
 }
 
 void KalmanFilter::init_means(const Eigen::VectorXd x0, const Eigen::VectorXd q,
