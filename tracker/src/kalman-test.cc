@@ -99,7 +99,7 @@ seed kalman_track::choose_seed(seed *current_seed)
   }
   else {
     physics::digi_hit* lowest = layer_hits[layers[0]][0];
-    physics::digi_hit* second_lowest = layer_hits[layers.back()][0];
+    physics::digi_hit* second_lowest = layer_hits[layers.end()[-2]][0];
 
     filt_seed = seed(lowest,second_lowest); // seed with bottom hits (we've chosen hits already)
   }

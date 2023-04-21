@@ -369,6 +369,7 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
 
 }
 
+/*
 void KalmanFilter::Q_update(double dy, double a, double b, double c)
 {
   // See MATHUSLA Calculations paper in ../docs/ for details
@@ -464,6 +465,94 @@ void KalmanFilter::Q_update(double dy, double a, double b, double c)
 
  // Q = Eigen::MatrixXd::Zero(6, 6); // Debug only, set Q =  0. Comment this line for normal use
 }
+*/
+
+
+void KalmanFilter::Q_update(double dy, double a, double b, double c)
+{
+  // See MATHUSLA Calculations paper in ../docs/ for details
+
+  // For the first hit, there is no scattering!
+  if (x_p.size()==0){
+    Q = Eigen::MatrixXd::Zero(6, 6);
+    return;
+  }
+
+  double mag = std::sqrt(a*a + b*b + c*c);
+
+  a /= mag; // normalise to 1 (ensures positive definite)
+  b /= mag;
+  c /= mag;
+
+  //mag = std::sqrt(a*a + b*b + c*c); // just 1, only included incase above norm is removed
+  //mag =1;
+
+//  double sin_theta = std::sqrt(a*a + b*b) / mag; // sin(\theta) of track relative to orthogonal to layer
+  double sin_theta = std::sqrt(b*b) / 1.0; // CORRECT ONE
+
+  Q << dy * dy * (b * b + a * a) / std::pow(b, 4),
+      dy * dy * a / (constants::c *mag * std::pow(b, 4)),
+      dy * dy * a * c / std::pow(b, 4),
+      constants::c *mag  * dy / b,
+      -constants::c *mag  * dy * a / (b * b),
+      0,
+      dy * dy * a / (constants::c *mag  * std::pow(b, 4)),
+      dy * dy * (1 - b * b) / (std::pow(constants::c *mag , 2) * std::pow(b, 4)),
+      dy * dy * c / (constants::c *mag  * std::pow(b, 4)),
+      dy * a / b,
+      -dy * (1 - b * b) / (b * b),
+      dy * c / b,
+      dy * dy * a * c / std::pow(b, 4),
+      dy * dy * c / (constants::c *mag  * std::pow(b, 4)),
+      dy * dy * (c * c + b * b) / std::pow(b, 4),
+      0,
+      -constants::c *mag  * dy * c / (b * b),
+      constants::c *mag  * dy / b,
+      constants::c *mag  * dy / b,
+      dy * a / b,
+      0,
+      std::pow(constants::c *mag , 2) * (1 - a * a),
+      -std::pow(constants::c *mag , 2) * (a * b),
+      -std::pow(constants::c *mag , 2) * (a * c),
+      -constants::c *mag  * dy * a / (b * b),
+      -dy * (1 - b * b) / (b * b),
+      -constants::c *mag  * dy * c / (b * b),
+      -std::pow(constants::c *mag , 2) * (a * b),
+      std::pow(constants::c *mag , 2) * (1 - b * b),
+      -std::pow(constants::c *mag , 2) * (b * c),
+      0,
+      dy * c / b,
+      constants::c *mag  * dy / b,
+      -std::pow(constants::c *mag , 2) * (a * c),
+      -std::pow(constants::c *mag , 2) * (b * c),
+      std::pow(constants::c *mag , 2) * (1 - c * c);
+
+  //double sigma_ms = kalman::sigma_ms_p / kalman::p; // [rad]
+  //double sigma_ms = par_handler->par_map["sigma_ms_p"] / par_handler->par_map["p"]; // [rad]
+
+  double L_Al = detector::scintillator_height - detector::scintillator_thickness; // [cm] Aluminum
+  //double L_Al = 0; // set aluminum to 0 for material interaction studies
+
+  double L_Sc = detector::scintillator_thickness; // [cm] Scintillator
+
+  double L_r_Sc = 43; // [cm] Radiation length Scintillator (Saint-Gobain paper)
+  double L_r_Al = 24.0111; // [g cm^(-2)] Radiation length Aluminum
+
+  double rho_Al = 2.7; // [g cm^(-3)] density of Aluminum
+  L_r_Al /= rho_Al; // [cm]
+
+  double L_rad = L_Al / L_r_Al + L_Sc / L_r_Sc; // [rad lengths] orthogonal to Layer
+
+  L_rad /= sin_theta; // [rad lengths] in direction of track
+
+  // double sigma_ms = 13.6 * std::sqrt(L_rad) * (1 + 0.038 * std::log10(L_rad)); // used to be standard ln (CORRECT ONE)
+  double sigma_ms = 13.6 * std::sqrt(L_rad) * (1 + 0.038 * std::log(L_rad)); //
+  sigma_ms /= par_handler->par_map["p"];
+
+  Q = Q * std::pow(sigma_ms, 2); // Scattering contribution to process noise
+
+}
+
 
 void KalmanFilter::init_means(const Eigen::VectorXd x0, const Eigen::VectorXd q,
                               const Eigen::MatrixXd B, const Eigen::MatrixXd D)

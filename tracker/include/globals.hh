@@ -59,7 +59,7 @@ namespace detector{
 	const int n_modules = 100;
 	const double scintillator_length = 450.0*units::cm;
 	const double scintillator_width = 4.50*units::cm;
-	const double scintillator_height = 3.0*units::cm;
+	const double scintillator_height = 2.6*units::cm;
 	const double scintillator_thickness = 2.0*units::cm; //Just the sensitive part
 	const double time_resolution = 1.0*units::ns;
 
