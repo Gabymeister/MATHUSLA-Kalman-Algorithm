@@ -20,7 +20,7 @@ namespace detector{
 	const double ip_z = 0.0;
 
 
-	const std::vector<std::vector<double>> LAYERS_Y={{6003.0*cm + 547*cm, 6006.0*cm + 547*cm,},  //layer 0
+/*	const std::vector<std::vector<double>> LAYERS_Y={{6003.0*cm + 547*cm, 6006.0*cm + 547*cm,},  //layer 0
  												 	{6106.0*cm + 547*cm, 6109.0*cm + 547*cm}, //layer 1
 													{6209.0*cm + 547*cm, 6212.0*cm + 547*cm}, //layer 2
  													{8003.0*cm + 547*cm, 8006.0*cm + 547*cm}, //layer 3
@@ -29,8 +29,8 @@ namespace detector{
  													{8606.0*cm + 547*cm, 8609.0*cm + 547*cm}, //layer 6
  													{8709.0*cm + 547*cm, 8712.0*cm + 547*cm}, //layer 7
  													{8812.0*cm + 547*cm, 8815.0*cm + 547*cm}, //layer 8
-													{8915.0*cm + 547*cm, 8918.0*cm + 547*cm}};  //layer 9
-	const int n_layers = 10;
+													{8915.0*cm + 547*cm, 8918.0*cm + 547*cm}};  //layer 9*/
+
 
 	const std::vector<std::vector<double>> MODULE_X = { 	{-4950.0*cm, -4050.0*cm},
 													{-3950.0*cm, -3050.0*cm},
@@ -62,6 +62,21 @@ namespace detector{
 	const double scintillator_height = 2.6*units::cm;
 	const double scintillator_thickness = 2.0*units::cm; //Just the sensitive part
 	const double time_resolution = 1.0*units::ns;
+
+	// 2023-04-25: changing to 6 layers. Numbers updated from simulation by print. 
+	// Tom: I still haven't figured out where the additional 550 cm comes from 
+	const std::vector<std::vector<double>> LAYERS_Y={{6003.0*cm + 547*cm, 6006.0*cm + 547*cm,},  //layer 0
+ 												 	{6106.0*cm + 547*cm, 6109.0*cm + 547*cm}, //layer 1
+													{6209.0*cm + 547*cm, 6212.0*cm + 547*cm}, //layer 2
+													{8551.3*cm-0.5*scintillator_height, 8551.3*cm+0.5*scintillator_height},
+													{8653.9*cm-0.5*scintillator_height, 8653.9*cm+0.5*scintillator_height},
+													{9051.3*cm-0.5*scintillator_height, 9051.3*cm+0.5*scintillator_height},
+													{9133.9*cm-0.5*scintillator_height, 9133.9*cm+0.5*scintillator_height},
+													{9216.5*cm-0.5*scintillator_height, 9216.5*cm+0.5*scintillator_height},
+													{9299.1*cm-0.5*scintillator_height, 9299.1*cm+0.5*scintillator_height},
+													{9381.7*cm-0.5*scintillator_height, 9381.7*cm+0.5*scintillator_height},
+													{9464.3*cm-0.5*scintillator_height, 9464.3*cm+0.5*scintillator_height}};
+	const int n_layers = 11;
 
 	const double x_min = MODULE_X[0][0];
 	const double y_min = LAYERS_Y[0][0];
