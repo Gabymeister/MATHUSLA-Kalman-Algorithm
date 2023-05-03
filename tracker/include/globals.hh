@@ -63,20 +63,19 @@ namespace detector{
 	const double scintillator_thickness = 2.0*units::cm; //Just the sensitive part
 	const double time_resolution = 1.0*units::ns;
 
-	// 2023-04-25: changing to 6 layers. Numbers updated from simulation by print. 
-	// Tom: I still haven't figured out where the additional 550 cm comes from 
-	const std::vector<std::vector<double>> LAYERS_Y={{6003.0*cm + 547*cm, 6006.0*cm + 547*cm,},  //layer 0
- 												 	{6106.0*cm + 547*cm, 6109.0*cm + 547*cm}, //layer 1
-													{6209.0*cm + 547*cm, 6212.0*cm + 547*cm}, //layer 2
-													{8551.3*cm-0.5*scintillator_height, 8551.3*cm+0.5*scintillator_height},
-													{8653.9*cm-0.5*scintillator_height, 8653.9*cm+0.5*scintillator_height},
-													{9051.3*cm-0.5*scintillator_height, 9051.3*cm+0.5*scintillator_height},
-													{9133.9*cm-0.5*scintillator_height, 9133.9*cm+0.5*scintillator_height},
-													{9216.5*cm-0.5*scintillator_height, 9216.5*cm+0.5*scintillator_height},
-													{9299.1*cm-0.5*scintillator_height, 9299.1*cm+0.5*scintillator_height},
-													{9381.7*cm-0.5*scintillator_height, 9381.7*cm+0.5*scintillator_height},
-													{9464.3*cm-0.5*scintillator_height, 9464.3*cm+0.5*scintillator_height}};
-	const int n_layers = 11;
+	// 2023-04-25: changing to 6 TOP layers. Numbers updated from simulation by print. 
+	const std::vector<std::vector<double>> LAYERS_Y={{6547.3*cm - 0.3*cm, 6549.3*cm + 0.3*cm},
+													 {6629.9*cm - 0.3*cm, 6631.9*cm + 0.3*cm},
+													 {8547.3*cm - 0.3*cm, 8549.3*cm + 0.3*cm},
+													 {8629.9*cm - 0.3*cm, 8631.9*cm + 0.3*cm},
+													 {9132.5*cm - 0.3*cm, 9134.5*cm + 0.3*cm},
+													 {9215.1*cm - 0.3*cm, 9217.1*cm + 0.3*cm},
+													 {9297.7*cm - 0.3*cm, 9299.7*cm + 0.3*cm},
+													 {9380.3*cm - 0.3*cm, 9382.3*cm + 0.3*cm},
+													 {9462.9*cm - 0.3*cm, 9464.9*cm + 0.3*cm},
+													 {9545.5*cm - 0.3*cm, 9547.5*cm + 0.3*cm}};
+
+	const int n_layers = LAYERS_Y.size();
 
 	const double x_min = MODULE_X[0][0];
 	const double y_min = LAYERS_Y[0][0];
@@ -111,7 +110,7 @@ namespace detector{
 namespace constants{
 
 	const double c = 29.97*units::cm/units::ns;
-	const double optic_fiber_n = 1.500; //estimate for the optical fiber index of refraction
+	const double optic_fiber_n = 1.580; //2023.5.3 Tom: change from 1.5->1.58 according to sim. estimate for the optical fiber index of refraction
 
 };
 

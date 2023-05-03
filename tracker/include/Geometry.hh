@@ -17,14 +17,14 @@ public:
 
 	//the uncertainty along each directiion in the layer
 	std::vector<double> widths(){
-		if ( (index % 2 ) == 0){
+		if ( (index % 2 ) == 1){
 			return { detector::scintillator_width, detector::scintillator_length };
 		}
 
 		return {  detector::scintillator_length, detector::scintillator_width  };
 	}
 	std::vector<double> uncertainty(){
-		if ( (index % 2 ) == 0){
+		if ( (index % 2 ) == 1){
 			return { detector::scintillator_width/sqrt(12.), detector::scintillator_thickness/sqrt(12.),
                 detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2) };
 		}
@@ -40,7 +40,7 @@ public:
 		max = _max;
 		center = (min + max)/2.0;
 
-		if (index % 2 == 0){
+		if (index % 2 == 1){
 			short_direction_index = 0;
 			long_direction_index = 1;
 		} else {
@@ -99,7 +99,7 @@ public:
 	double cz = (detector::z_min + detector::z_max)/2.0;
 	double cy_0 = (detector::LAYERS_Y[0][1] + detector::LAYERS_Y[0][0])/2.0;
 	double cy_1 = (detector::LAYERS_Y[1][1] + detector::LAYERS_Y[1][0])/2.0;
-	double cy_2 = (detector::LAYERS_Y[2][1] + detector::LAYERS_Y[2][0])/2.0;
+	// double cy_2 = (detector::LAYERS_Y[2][1] + detector::LAYERS_Y[2][0])/2.0;
 	double xmin, ymin, zmin;
 	double xmax, ymax, zmax;
 	double x_width = detector::floor_x_width;
@@ -129,9 +129,9 @@ public:
 			return {cx + x_local, cy_0, cz + z_local};
 		} else if (id.layerIndex == 1){
 			return {cx + x_local, cy_1, cz + z_local};
-		} else if (id.layerIndex == 2){
-			return {cx + x_local, cy_2, cz + z_local};
-		}
+		} //else if (id.layerIndex == 2){
+		// 	return {cx + x_local, cy_2, cz + z_local};
+		// }
 
 	}
 
@@ -140,9 +140,9 @@ public:
 			return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
 		} else if (y_index == 1) {
 			return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
-		} else if (y_index == 2) {
-			return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
-		}
+		} //else if (y_index == 2) {
+		// 	return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
+		// }
 	}
 };
 
@@ -306,11 +306,11 @@ public:
 			int layer_number = 1;
 			std::vector<int> floor_indices = _floor.GetFloorIndex(x, y, z);
 			return detID(module_index, layer_number, floor_indices[0], floor_indices[1], isFloorElement);
-		} else if (y < detector::LAYERS_Y[2][1] && y > detector::LAYERS_Y[2][0]){
-			int layer_number = 2;
-			std::vector<int> floor_indices = _floor.GetFloorIndex(x, y, z);
-			return detID(module_index, layer_number, floor_indices[0], floor_indices[1], isFloorElement);
-		}
+		} //else if (y < detector::LAYERS_Y[2][1] && y > detector::LAYERS_Y[2][0]){
+		// 	int layer_number = 2;
+		// 	std::vector<int> floor_indices = _floor.GetFloorIndex(x, y, z);
+		// 	return detID(module_index, layer_number, floor_indices[0], floor_indices[1], isFloorElement);
+		// }
 
 	}
 
@@ -346,7 +346,7 @@ public:
 		if (layer_number == -1){
 			return detID();}
 
-		if (layer_number < 3) return GetDetIDFloor(x, y, z);
+		if (layer_number < 2) return GetDetIDFloor(x, y, z);
 
 		//FINDING MODULE
 

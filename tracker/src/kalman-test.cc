@@ -98,10 +98,14 @@ seed kalman_track::choose_seed(seed *current_seed)
     filt_seed = *current_seed; // seed based on ds^2 (for hit selection)
   }
   else {
-    physics::digi_hit* lowest = layer_hits[layers[0]][0];
-    physics::digi_hit* second_lowest = layer_hits[layers.end()[-2]][0];
+    physics::digi_hit* first_hit = layer_hits[layers[0]][0];
+    physics::digi_hit* second_hit = layer_hits[layers.end()[-1]][0];
 
-    filt_seed = seed(lowest,second_lowest); // seed with bottom hits (we've chosen hits already)
+    if(first_hit->det_id.layerIndex%2 == second_hit->det_id.layerIndex%2){
+      second_hit = layer_hits[layers.end()[-2]][0];
+    }
+
+    filt_seed = seed(first_hit,second_hit); // seed with bottom hits (we've chosen hits already)
   }
 
   return filt_seed;
