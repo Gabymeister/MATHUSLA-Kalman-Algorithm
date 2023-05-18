@@ -133,6 +133,8 @@ public:
 		// 	return {cx + x_local, cy_2, cz + z_local};
 		// }
 
+		return {};
+
 	}
 
 	std::vector<double> uncertainty(int y_index){
@@ -143,6 +145,8 @@ public:
 		} //else if (y_index == 2) {
 		// 	return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
 		// }
+
+		return {-999,-999,-999};
 	}
 };
 
@@ -311,6 +315,8 @@ public:
 		// 	std::vector<int> floor_indices = _floor.GetFloorIndex(x, y, z);
 		// 	return detID(module_index, layer_number, floor_indices[0], floor_indices[1], isFloorElement);
 		// }
+
+		return detID();
 
 	}
 

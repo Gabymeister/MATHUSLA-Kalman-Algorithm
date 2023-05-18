@@ -768,4 +768,6 @@ double KalmanFilter::smooth_means(int k)
   added_tracks[k]->D_s = D_n;
   added_tracks[k]->q_f = q_f[k];
   added_tracks[k]->D_f = D_f[k];
+
+  return 0;
 }
