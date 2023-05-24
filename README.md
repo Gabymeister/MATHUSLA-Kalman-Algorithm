@@ -47,5 +47,39 @@ A script for automating series runs of the tracker, and further documentation ab
 
 Job submission scripts for parallelising the tracker or analysis code for large datasets is found in parallel.
 
+### Tracker configuration
+
+Tracker parameters are stored in a txt file located at `tracker/run/par_card.txt`
+The parameters are explained in the table below:
+
+| parameter name | usage | unit|
+|:--------------|:-------------------------|:---|
+|branch              | 0 or 1, 0 for nomal mode and 1 for COSMIC mode |
+|debug               | 0 of 1, 1 to turn on debug information| |
+|seed                | (float, default =1.0) initial seed value for random generator. Set to -1 to use arbiturary seed| |
+|seed_interval               | (float, default =1.0) Maximum interval for track seeding. Interval defined as ds^2 = dr^2-(c*dt)^2| |
+|kalman_chi_s                | DEPRECATED                   | |
+|kalman_chi_add              | (float, default=200) The maximum accepted incremental chi2  for new hits                   | |
+|kalman_track_chi                | (float, default=15) Cut on final track reduced-chi2 after smoothing| |
+|kalman_pval_drop                | (float, default=1.0) Cut on the smoothed chi2 during dropping steps. If the P value when a hit is added is larger than this number, the hit is dropped                 | |
+|kalman_pval_add             | 0.99                 | |
+|kalman_pval_track               | 0.95                 | |
+|p               | 500.0                    | |
+|scint_efficiency                | 0.001                    | |
+|merge_cos_theta             | -2.0                 | |
+|merge_distance              | 0.0                  | |
+|seed_closest_approach               | 300.0                    | |
+|vertex_chi2             | 15.0                 | |
+|closest_approach_add                | 150.0                    | |
+|kalman_vertex_chi_add               | 100000.0                 | |
+|kalman_vertex_chi               | 100.0                    | |
+|kalman_v_add[0]                | 0.8                   | |
+|kalman_v_add[1]                | 1.2                   | |
+|kalman_v_drop[0]               | -9999                 | |
+|kalman_v_drop[1]               | 9999                  | |
+|start_ev                | 0.0                  | |
+|end_ev              | 200000.0                 | |
+|noise_hz                | 0.0                  | |
+
 
 

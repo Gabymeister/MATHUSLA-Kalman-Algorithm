@@ -134,7 +134,8 @@ public:
 			chi2 += track->vertex_residual(parameters);
 		}
 
-		double ndof = static_cast<double>(npar * (track_list.size() - 1));
+		// double ndof = static_cast<double>(npar * (track_list.size() - 1));
+		double ndof = static_cast<double>(3 * (track_list.size())- npar);
 		ndof = ndof > 1. ? ndof : 1.0;
 		return chi2 / ndof;
 	}
@@ -180,7 +181,7 @@ public:
 		//GETTTING STATUS:
 		double fmin = 0.0;
 		double fedm = 0.0;
-		double errdef = 0.0;
+		double errdef = 1; //0: NLL, 1:Least-square
 		int npari = 0;
 		int nparx = 0;
 		int istat = 0; //this is the one we really care about

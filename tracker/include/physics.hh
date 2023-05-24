@@ -258,6 +258,10 @@ namespace physics{
 
         //error in above distance_to calculation
         double err_distance_to(Vector point, double t);
+        double err_distance_to_mod(Vector point, double t);        
+
+        //error in above distance_to calculation
+        double chi2_distance_to(Vector point, double t);        
 
         //gives full spatial residual for track to a vertex with arg params
         double vertex_residual(std::vector<double> params);

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <Eigen/Dense>
+
 
 void VertexFinder::Seed_k_m()
 {
@@ -33,8 +35,11 @@ void VertexFinder::Seed_k_m()
 
 void VertexFinder::FindVertices_k_m_hybrid()
 {
-	if (seeds_k_m.size() < 1)
+	if (seeds_k_m.size() < 1){
+		noSeeds+=1;
 		return; // no seeds
+	}
+
 
 	while (seeds_k_m.size() > 0 and tracks_k_m.size() > 0)
 	{
@@ -59,8 +64,10 @@ void VertexFinder::FindVertices_k_m_hybrid()
 			}
 		}
 
-		if (used_tracks.size() < 2)
+		if (used_tracks.size() < 2){
+			failedSeed+=1;
 			continue;
+		}
 
 		VertexFitter fitter;
 		auto status = fitter.fit(used_tracks, current_seed.guess().std());
@@ -99,6 +106,7 @@ void VertexFinder::FindVertices_k_m_hybrid()
 		vertices_k_m.push_back(good_vertex);
 		tracks_k_m = unused_tracks;
 	}
+
 }
 
 void VertexFinder::FindVertices_k()
@@ -232,9 +240,17 @@ void VertexFitter::nll(int &npar, double *gin, double &f, double *pars, int ifla
 
 		double dist = track->distance_to(Vector(_x, _y, _z), _t);
 
-		double err = track->err_distance_to(Vector(_x, _y, _z), _t);
 
-		error += 0.5 * (dist / err) * (dist / err) + TMath::Log(err);
+		// -- Use Negative Log Likelihood
+		// double err = track->err_distance_to(Vector(_x, _y, _z), _t);
+		// error += 0.5 * (dist / err) * (dist / err) + TMath::Log(err);
+
+		// -- Use chi2 instead
+		double err = track->chi2_distance_to(Vector(_x, _y, _z), _t);
+		error += err;
+
+		// error += track->err_distance_to_mod(Vector(_x, _y, _z), _t);
+		
 
 		if (isnan(error))
 		{

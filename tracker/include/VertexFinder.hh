@@ -61,6 +61,9 @@ public:
 	int missedChi2 = 0;
 	int noConverge = 0;
 
+	int noSeeds = 0;
+	int failedSeed = 0;
+
 //	void Seed();
 //	void Seed_k();
 	void Seed_k_m();

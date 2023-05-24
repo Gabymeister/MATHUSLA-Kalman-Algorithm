@@ -176,20 +176,28 @@ namespace physics {
 
     	double dist = distance_to(point, t);
 
+    	// derivatives[0] = ((t-t0)*vx - x + x0)/dist;
+    	// //derivatives[1] = detector::scintillator_height;
+    	// derivatives[1] = ((t-t0)*vz - z + z0)/dist;
+    	// derivatives[2] = (t-t0)*((t-t0)*vx - x + x0)/dist;
+    	// derivatives[3] = (t-t0)*((t-t0)*vy - y + y0)/dist;
+    	// derivatives[4] = (t-t0)*((t-t0)*vz - z + z0)/dist;
+    	// derivatives[5] = -1.0*(vx*((t-t0)*vx - x + x0) + vy*((t-t0)*vy - y + y0) + vz*((t-t0)*vz - z + z0))/dist;
+
     	derivatives[0] = ((t-t0)*vx - x + x0)/dist;
-    	//derivatives[1] = detector::scintillator_height;
-    	derivatives[1] = ((t-t0)*vz - z + z0)/dist;
-    	derivatives[2] = (t-t0)*((t-t0)*vx - x + x0)/dist;
-    	derivatives[3] = (t-t0)*((t-t0)*vy - y + y0)/dist;
-    	derivatives[4] = (t-t0)*((t-t0)*vz - z + z0)/dist;
-    	derivatives[5] = -1.0*(vx*((t-t0)*vx - x + x0) + vy*((t-t0)*vy - y + y0) + vz*((t-t0)*vz - z + z0))/dist;
+    	derivatives[1] = ((t-t0)*vy - y + y0)/dist;
+    	derivatives[2] = ((t-t0)*vz - z + z0)/dist;
+    	derivatives[3] = (t-t0)*((t-t0)*vx - x + x0)/dist;
+    	derivatives[4] = (t-t0)*((t-t0)*vy - y + y0)/dist;
+    	derivatives[5] = (t-t0)*((t-t0)*vz - z + z0)/dist;
+    	derivatives[6] = -1.0*(vx*((t-t0)*vx - x + x0) + vy*((t-t0)*vy - y + y0) + vz*((t-t0)*vz - z + z0))/dist;		
 
     	//now we calculate the actual error
     	double error = 0.0;
 
     	for (int i = 0; i < derivatives.size(); i++){
     		for (int j = 0; j < derivatives.size(); j++){
-
+				// std::cout<<"i: "<<i<<" ,j: "<<j<<std::endl;
     			error += derivatives[i]*derivatives[j]*_CovMatrix[i][j];
 
     		}
@@ -197,6 +205,89 @@ namespace physics {
 
     	return TMath::Sqrt(error);
     }
+
+    double track::err_distance_to_mod(Vector point, double t){
+
+    	std::vector<double> derivatives = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; //partial derivates of position_at
+    	std::vector<double> derivatives_time = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; //partial derivates of position_at
+    	//note, we don't include the derivative with respect to y. y0 is fixed, and so it isnt included in the covariance matrix
+    	auto x = point.x;
+    	auto y = point.y;
+    	auto z = point.z;
+
+    	double dist = distance_to(point, t);
+
+		auto dy = y-y0;
+		auto dt = t0+dy/vy-t;
+		auto err_x = x0 + vx*dy/vy -x;
+		auto err_z = z0 + vz*dy/vy -z;
+
+    	derivatives[0] = err_x/dist;
+    	derivatives[1] = -(err_x*vx/vy + err_z*vz/vy)/dist;
+    	derivatives[2] = err_z/dist;
+    	derivatives[3] = err_x*dy/vy/dist;
+    	derivatives[4] = -(err_x*vx*dy/(vy*vy) + err_z*vz*dy/(vy*vy))/dist;
+    	derivatives[5] = err_z*dy/vy/dist;
+    	derivatives[6] = 0;
+
+		derivatives_time[0] = 0;
+		derivatives_time[1] = -1/vy;
+		derivatives_time[2] = 0;
+		derivatives_time[3] = 0;
+		derivatives_time[4] = -dy/vy/vy;
+		derivatives_time[5] = 0;
+		derivatives_time[6] = 1;
+
+    	//now we calculate the actual error
+    	double error = 0.0;
+    	double error_time = 0.0;
+
+    	for (int i = 0; i < derivatives.size(); i++){
+    		for (int j = 0; j < derivatives.size(); j++){
+				// std::cout<<"i: "<<i<<" ,j: "<<j<<std::endl;
+    			error += derivatives[i]*derivatives[j]*_CovMatrix[i][j];
+    			error_time += derivatives_time[i]*derivatives_time[j]*_CovMatrix[i][j];
+    		}
+    	}
+
+		auto nll = 0.5 * (dist*dist / error) + 0.5 * TMath::Log(error)
+				 + 0.5 * (dt*dt/error_time) + 0.5 * TMath::Log(error_time) 
+				 + 2*0.5* TMath::Log(2*3.141592653589);
+
+    	return nll;
+    }	
+
+	double track::chi2_distance_to(Vector point, double t){
+
+    	auto _x = point.x;
+    	auto _y = point.y;
+    	auto _z = point.z;
+		double dy = _y - y0;
+
+		// Jacobian from (_x,_z,t) to (x0,y0,z0, vx,vy,vz, t)
+		Eigen::MatrixXd jac;
+		jac = Eigen::MatrixXd::Zero(3, 7);
+		jac << 	1, -vx/vy,	0,	 	dy/vy,	-vx*dy/(vy*vy),		0,		0,
+			   	0, -vz/vy,  1,			0,	-vz*dy/(vy*vy),	dy/vy,		0,
+				0,  -1/vy, 	0,			0,	   -dy/(vy*vy),		0, 		1;
+		// Copy the covariance matrix of (x0,y0,z0, vx,vy,vz, t) into an Eigen matrix
+		Eigen::MatrixXd CovMatrix_track;
+		CovMatrix_track = Eigen::MatrixXd::Zero(7, 7);
+		for (int ii=0; ii<7; ii++){
+			for (int jj=0; jj<7; jj++){
+				CovMatrix_track(ii,jj) = _CovMatrix[ii][jj];
+			}
+		}		
+		// Calculate the final uncertainty matrix of (_x,_z,t)
+		auto CovMatrix_vertex = jac * CovMatrix_track * jac.transpose();
+
+    	//now we calculate the Chi2
+		Eigen::VectorXd residual_vector(3);
+		residual_vector<<		_x - (x0+vx*dy/vy), 	_z- (z0+vz*dy/vy),		t- (t0+dy/vy);
+    	auto error = residual_vector.transpose()*CovMatrix_vertex.inverse()*residual_vector;
+
+    	return error;
+    }	
 
 
     double track::vertex_residual(std::vector<double> params){
@@ -206,7 +297,7 @@ namespace physics {
     	double z = params[2];
     	double t = params[3];
 
-    	return distance_to(Vector(x, y, z), t)/err_distance_to(Vector(x, y, z), t);
+    	return chi2_distance_to(Vector(x, y, z), t);
     }
 
 
@@ -233,7 +324,11 @@ namespace physics {
     Vector track::closest_approach_midpoint(track* tr2){
 
     	using namespace vector;
-        if (tr2->index == index) return P0Vector();
+        // if (tr2->index == index) return P0Vector();
+        if (tr2->index == index) {
+			// std::cout<< "seed using same track"<<std::endl;
+			return P0Vector();
+		}
 
         Vector rel_v = tr2->VelVector() - this->VelVector();
     	double rel_v2 = rel_v ^ rel_v ; //that's the dot product :/

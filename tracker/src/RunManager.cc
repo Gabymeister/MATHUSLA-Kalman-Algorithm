@@ -135,6 +135,13 @@ int RunManager::StartTracking()
 		events_handled++;
 	}
 
+	
+
+	std::cout<<"Vertext failure count, noSeeds: "<<_vertexer->noSeeds<<std::endl;
+	std::cout<<"Vertext failure count, failedSeed: "<<_vertexer->failedSeed<<std::endl;
+	std::cout<<"Vertext failure count, noConverge: "<<_vertexer->noConverge<<std::endl;
+	std::cout<<"Vertext failure count, missedChi2: "<<_vertexer->missedChi2<<std::endl;
+
 	if (hndlr.file_opened) {
 		std::cout << made_its_k << " Kalman tracks made it" << std::endl;
 		std::cout << verts_k_m << " Merged Kalman vertices made it" << std::endl;
