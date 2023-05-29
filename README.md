@@ -59,7 +59,7 @@ The parameters are explained in the table below:
 |seed                | (float, default =1.0) initial seed value for random generator. Set to -1 to use arbiturary seed| |
 |seed_interval               | (float, default =1.0) Maximum interval for track seeding. Interval defined as ds^2 = dr^2-(c*dt)^2| |
 |kalman_chi_s                | DEPRECATED                   | |
-|kalman_chi_add              | (float, default=200) The maximum accepted incremental chi2  for new hits                   | |
+|kalman_chi_add              | (float, default=200) The maximum accepted chi2 increment for new hit added to the Kalman filter                   | |
 |kalman_track_chi                | (float, default=15) Cut on final track reduced-chi2 after smoothing| |
 |kalman_pval_drop                | (float, default=1.0) Cut on the smoothed chi2 during dropping steps. If the P value when a hit is added is larger than this number, the hit is dropped                 | |
 |kalman_pval_add             | 0.99                 | |

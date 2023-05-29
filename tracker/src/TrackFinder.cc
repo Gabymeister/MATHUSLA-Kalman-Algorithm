@@ -544,7 +544,6 @@ void TrackFinder::FindTracks_kalman()
 		//chi_sum = chi_sum / (4.0 * kft_2.chi_s.size() - 6.0); // always non_negative due to num_hit cut (if track can be passed)
 		chi_sum = chi_sum / ndof;
 
-//		if (current_track->nlayers() >= cuts::track_nlayers && chi_sum < cuts::kalman_track_chi)
 		if (current_track->nlayers() >= cuts::track_nlayers && chi_sum < par_handler->par_map["kalman_track_chi"])
 		{
 			tracks_k.push_back(current_track);
@@ -563,10 +562,27 @@ void TrackFinder::FindTracks_kalman()
 		hits_k = unused_hits;
 
 		if (seeds_k.size() == 0)
-			iterate = false;
+			{iterate = false; break;}
 		if (hits_k.size() < cuts::nseed_hits)
-			iterate = false;
+			{iterate = false; break;}
 
+		// Remove seeds with hits that are already used in tracks
+		// First, get a list of ID of remaining hits
+		std::vector <int> hits_k_ids;
+		for (auto hit : hits_k){
+			hits_k_ids.push_back(hit->index);
+		}
+		// Then, loop all the seeds and erase the ones that does not appear in the remaining hits.	
+		for (int i = seeds_k.size() - 1; i >= 0; i--){
+			auto current_seed = seeds_k.at(i);
+			std::vector<int>::iterator find1, find2;
+			find1 = std::find(hits_k_ids.begin(), hits_k_ids.end(),current_seed.hits.first->index);
+			find2 = std::find(hits_k_ids.begin(), hits_k_ids.end(),current_seed.hits.second->index);
+			// if either hit in the seeds is not found in the remaining hits:
+			if ((find1 == hits_k_ids.end()) || (find2 == hits_k_ids.end())){
+				seeds_k.erase(seeds_k.begin() + i);
+			}
+		}
 	}
 	// assign indices
 	for (int i=0; i < tracks_k.size(); i++)

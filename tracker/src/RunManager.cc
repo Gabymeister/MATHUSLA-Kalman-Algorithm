@@ -138,7 +138,7 @@ int RunManager::StartTracking()
 	
 
 	std::cout<<"Vertext failure count, noSeeds: "<<_vertexer->noSeeds<<std::endl;
-	std::cout<<"Vertext failure count, failedSeed: "<<_vertexer->failedSeed<<std::endl;
+	std::cout<<"Vertext failure count, Not enough tracks: "<<_vertexer->failedSeed<<std::endl;
 	std::cout<<"Vertext failure count, noConverge: "<<_vertexer->noConverge<<std::endl;
 	std::cout<<"Vertext failure count, missedChi2: "<<_vertexer->missedChi2<<std::endl;
 
