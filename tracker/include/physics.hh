@@ -271,6 +271,7 @@ namespace physics{
 
         //closest approach of two tracks position of closest approach
         Vector closest_approach_midpoint(track* tr2);
+        std::vector<double> closest_approach_midpoint_4d(track* tr2);
         Eigen::VectorXd ca_midpoint_kalman(track* tr2);
 
         //angle the track direction forms with straight line from ip to initial point

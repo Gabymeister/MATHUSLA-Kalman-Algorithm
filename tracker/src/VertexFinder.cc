@@ -21,7 +21,6 @@ void VertexFinder::Seed_k_m()
 			auto tr1 = tracks_k_m[n1];
 			auto tr2 = tracks_k_m[n2];
 
-//			if (tr1->closest_approach(tr2) < cuts::seed_closest_approach)
 			if (tr1->closest_approach(tr2) < par_handler->par_map["seed_closest_approach"])
 			{
 				seeds_k_m.push_back(vertex_seed(tr1, tr2));
@@ -53,7 +52,6 @@ void VertexFinder::FindVertices_k_m_hybrid()
 
 		for (auto tr : tracks_k_m)
 		{
-//			if (current_seed.closest_approach(tr) < cuts::closest_approach_add)
 			if (current_seed.closest_approach(tr) < par_handler->par_map["closest_approach_add"])
 			{
 				used_tracks.push_back(tr);
@@ -70,7 +68,7 @@ void VertexFinder::FindVertices_k_m_hybrid()
 		}
 
 		VertexFitter fitter;
-		auto status = fitter.fit(used_tracks, current_seed.guess().std());
+		auto status = fitter.fit(used_tracks, current_seed.guess());
 
 //		if (status == false or fitter.merit() > cuts::vertex_chi2)
 		if (status == false or fitter.merit() > par_handler->par_map["vertex_chi2"])

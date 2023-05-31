@@ -343,6 +343,30 @@ namespace physics {
     	return (pos1 + pos2).Scale(0.5);
     }
 
+    std::vector<double> track::closest_approach_midpoint_4d(track* tr2){
+
+    	using namespace vector;
+        // if (tr2->index == index) return P0Vector();
+        if (tr2->index == index) {
+			// std::cout<< "seed using same track"<<std::endl;
+			return {tr2->x0,tr2->y0,tr2->z0,tr2->t0};
+		}
+
+        Vector rel_v = tr2->VelVector() - this->VelVector();
+    	double rel_v2 = rel_v ^ rel_v ; //that's the dot product :/
+
+    	Vector displacement = this->P0Vector() - tr2->P0Vector();
+
+    	double t_ca = (  (displacement ^ rel_v) - ( (this->VelVector().Scale(this->t0) - tr2->VelVector().Scale(tr2->t0)) ^ rel_v)  )/rel_v2;
+
+    	Vector pos1 = this->P0Vector() + this->VelVector().Scale(t_ca - this->t0);
+    	Vector pos2 =  tr2->P0Vector() +  tr2->VelVector().Scale(t_ca -  tr2->t0);
+    
+    	Vector mid =  (pos1 + pos2).Scale(0.5);
+		std::vector<double> mid_t = {mid.x,mid.y,mid.z, t_ca};
+		return mid_t;
+    }	
+
     Eigen::VectorXd track::ca_midpoint_kalman(track* tr2){
 
         using namespace vector;

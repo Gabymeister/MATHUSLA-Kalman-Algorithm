@@ -37,6 +37,9 @@ void TrackFinder::Seed()
 
 			double ds_2 = c_score(hits_k[first], hits_k[second]);
 
+			// std::cout << "Layer Index: " << layer1 <<", "<<layer2<<" c_score: "<< ds_2<< std::endl;
+
+
 			//double dr = (hits[first].PosVector() - hits[second].PosVector()).Magnitude() / constants::c; // [ns]
 
 			if (ds_2 > par_handler->par_map["seed_interval"])
@@ -419,7 +422,8 @@ void TrackFinder::FindTracks_kalman()
 //			int drops = 0;
 
 			double ndof = good_hits.size();
-			ndof = ndof > 1.0 ? 4.0 * ndof - 6.0 : 1.0;
+			ndof = (3.0 * ndof - 6.0)/ndof;
+			ndof = ndof > 1.0 ?  ndof: 1.0;
 
 			//dropping hits
 			for (int n = 0; n < good_hits.size(); n++)
@@ -518,7 +522,7 @@ void TrackFinder::FindTracks_kalman()
 
 		//double ndof = kft_2.chi_s.size();
 		ndof = kft_2.chi_s.size();
-		ndof = ndof > 1.0 ? 4.0 * ndof - 6.0 : 1.0;
+		ndof = ndof > 1.0 ? 3.0 * ndof - 6.0 : 1.0;
 
 		for (auto chi : kft_2.chi_f) {
 			local_chi_f.push_back(chi);

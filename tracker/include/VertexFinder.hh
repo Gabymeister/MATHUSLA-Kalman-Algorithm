@@ -28,11 +28,17 @@ public:
 		return ca1 < ca2 ? ca1 : ca2;
 	}
 
-	vector::Vector guess()
-	{
+	// vector::Vector guess()
+	// {
 
-		return tracks.first->closest_approach_midpoint(tracks.second);
-	}
+	// 	return tracks.first->closest_approach_midpoint(tracks.second);
+	// }
+	std::vector<double> guess()
+	{
+		// Tom: changing from closest_approach_midpoint to closest_approach_midpoint_4d, because the former one does not give initial value of time
+		return tracks.first->closest_approach_midpoint_4d(tracks.second);
+	}	
+	
 
 	Eigen::VectorXd guess_k()
 	{

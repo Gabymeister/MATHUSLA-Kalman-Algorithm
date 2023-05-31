@@ -282,6 +282,7 @@ void kalman_track::find_first()
   // take last hit in backward seed filter and use it to start forward filter
   found_hits = kf_find.added_hits;
 
+  // lowest_hit = kf_find.added_hits.front();
   lowest_hit = kf_find.added_hits.back();
 
 //  velocity = {kf_find.x_f_list().back()[3], kf_find.x_f_list().back()[4], kf_find.x_f_list().back()[5]};

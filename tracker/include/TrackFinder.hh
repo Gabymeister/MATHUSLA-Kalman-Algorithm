@@ -200,7 +200,6 @@ public:
 		return seed_hit_in;
 	}
 
-	double _score();
 	double c_score(physics::digi_hit *hit1, physics::digi_hit *hit2)
 	{
 
@@ -208,15 +207,36 @@ public:
 		double dy = hit1->y - hit2->y;
 		double dz = hit1->z - hit2->z;
 		double dt = hit1->t - hit2->t;
+		int layer1_ind = (hit1->det_id).layerIndex;
+		int dlayer = TMath::Abs((hit1->det_id).layerIndex - (hit2->det_id).layerIndex);
+		double dlayer_mapped=0;
 
-		return TMath::Abs((dx * dx + dy * dy + dz * dz) / (constants::c * constants::c) - dt * dt);
-	} //c_score
+
+		if(dlayer==3){
+			if (layer1_ind==2){dlayer_mapped=0;}
+			else if (layer1_ind==3){dlayer_mapped=1;}
+			else			  {dlayer_mapped=2;}
+			}
+		if(dlayer==5){
+			if (layer1_ind==2){dlayer_mapped=3;}
+			else if (layer1_ind==3){dlayer_mapped=4;}
+			else			  {dlayer_mapped=5;}
+			}			
+		else if(dlayer==7){dlayer_mapped=6;}
+		else if(dlayer==6){dlayer_mapped=7;}
+		else if(dlayer==4){dlayer_mapped=8;}
+		else if(dlayer==2){dlayer_mapped=9;}
+		else if(dlayer==1){dlayer_mapped=10;}
+
+		// return TMath::Abs((dx * dx + dy * dy + dz * dz) / (constants::c * constants::c) - dt * dt);
+		// return TMath::Abs(TMath::Sqrt((dx * dx + dy * dy + dz * dz))/dt - constants::c) + TMath::Abs(dlayer*300);
+		// return TMath::Abs(TMath::Sqrt((dx * dx + dy * dy + dz * dz))/dt/constants::c-1);
+		return TMath::Abs((dx * dx + dy * dy + dz * dz)/ (constants::c * constants::c)/(dt*dt) - 1)+ TMath::Abs(dlayer_mapped*100);
+	} 
 
 	double c_score(const seed &s)
 	{
 		auto val = c_score(s.hits.first, s.hits.second);
-		;
-
 		return val;
 	}
 
@@ -228,15 +248,14 @@ public:
 //		for (auto seed : seeds)
 //			seed.score = c_score(seed);
 
-		int i;
+		int i=0;
 		for (auto seed : seeds_k)
 		{
-			auto P1 = seed.hits.first->PosVector();
-			auto P2 = seed.hits.second->PosVector();
-
-			double dr = (P2 - P1).Magnitude() / constants::c; // [ns]
-
-			seeds_k[i].score = c_score(seed) / (dr * dr); // these will now be ordered by relative scores
+			// auto P1 = seed.hits.first->PosVector();
+			// auto P2 = seed.hits.second->PosVector();
+			// double dr = (P2 - P1).Magnitude() / constants::c; // [ns]
+			// seeds_k[i].score = c_score(seed) / (dr * dr); // these will now be ordered by relative scores
+			seeds_k[i].score = c_score(seed); // these will now be ordered by relative scores
 
 			i++;
 		}

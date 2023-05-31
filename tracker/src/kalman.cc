@@ -294,7 +294,7 @@ double KalmanFilter::smooth_gain(const physics::digi_hit *y, int k)
   }
 
   double ndof = x_f.size();
-  ndof = ndof > 1.0 ? 4.0 * ndof - 6.0 : 1.0;
+  ndof = ndof > 1.0 ? 3.0 * ndof - 6.0 : 1.0;
 
   if (dropping
 //     && (chi_plus_s > cuts::kalman_chi_s
