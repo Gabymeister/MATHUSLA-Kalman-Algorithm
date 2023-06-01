@@ -137,10 +137,10 @@ int RunManager::StartTracking()
 
 	
 
-	std::cout<<"Vertext failure count, noSeeds: "<<_vertexer->noSeeds<<std::endl;
-	std::cout<<"Vertext failure count, Not enough tracks: "<<_vertexer->failedSeed<<std::endl;
-	std::cout<<"Vertext failure count, noConverge: "<<_vertexer->noConverge<<std::endl;
-	std::cout<<"Vertext failure count, missedChi2: "<<_vertexer->missedChi2<<std::endl;
+	std::cout<<" Vertex failure count\n  noSeeds: "<<_vertexer->noSeeds<<std::endl;
+	std::cout<<"  not converge: "<<_vertexer->noConverge<<std::endl;
+	std::cout<<"  rejected by chi2 cut: "<<_vertexer->missedChi2<<std::endl;
+	std::cout<<"  not enough tracks: "<<_vertexer->failedSeed<<std::endl;
 
 	if (hndlr.file_opened) {
 		std::cout << made_its_k << " Kalman tracks made it" << std::endl;

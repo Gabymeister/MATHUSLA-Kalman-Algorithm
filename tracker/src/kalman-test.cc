@@ -44,13 +44,14 @@ void kalman_track::kalman_all(std::vector<physics::digi_hit *> trackhits, seed *
 
   while (status == 1)
   {
-    seed filt_seed = choose_seed(current_seed);
+    // seed filt_seed = choose_seed(current_seed);
+    seed_in_use = choose_seed(current_seed);
 
 //    init_seed_info(current_seed);
-    init_seed_info(&filt_seed);
+    init_seed_info(&seed_in_use);
 
 //    init_matrices(current_seed);
-    init_matrices(&filt_seed);
+    init_matrices(&seed_in_use);
 
     init_first_state();
 
@@ -104,6 +105,13 @@ seed kalman_track::choose_seed(seed *current_seed)
     if(first_hit->det_id.layerIndex%2 == second_hit->det_id.layerIndex%2){
       second_hit = layer_hits[layers.end()[-2]][0];
     }
+
+    // physics::digi_hit* second_hit = layer_hits[layers[3]][0];
+
+    // if(first_hit->det_id.layerIndex%2 == second_hit->det_id.layerIndex%2){
+    //   if(layers.size()>4){second_hit = layer_hits[layers[4]][0];}
+    //   else{second_hit = layer_hits[layers[2]][0];}
+    // }
 
     filt_seed = seed(first_hit,second_hit); // seed with bottom hits (we've chosen hits already)
   }
@@ -308,17 +316,28 @@ void kalman_track::filter()
   double chi_tot = 0;
   Stat_Funcs sts;
 
+  double dy_skipped=0;
+
   for (int i = det_ind_to_layers[filter_start_layer]; i < layers.size() - 1; i++)
   {
 
     double y_step = layer_hits[layers[i + 1]][0]->y - layer_hits[layers[i]][0]->y;
-//    double y = kf.y_val;
 
     if (skipped)
     {
-      y_step += kf.dy;
+      y_step += dy_skipped;
+      dy_skipped =0;
       skipped = false;
     }
+
+
+    // Skip the layer with the second hit from seed
+    // if (((seed_in_use.hits.second->det_id).layerIndex*2 == layers[i + 1]) && !finding && !dropping){
+    //   // std::cout<< "layer ind " << (seed_in_use.hits.second->det_id).layerIndex*2 << ", layers[i+1] " <<layers[i + 1] << std::endl;
+    //   skipped = true;
+    //   dy_skipped =y_step;
+    //   continue;
+    // }
 
     double chi = kf.update_gain(layer_hits[layers[i + 1]], y_step);
 //    double chi = kf.update_gain(layer_hits[layers[i + 1]], y);
@@ -327,6 +346,7 @@ void kalman_track::filter()
     if (chi == -1.0)
     {
       skipped = true;
+      dy_skipped =kf.dy;
       continue;
     }
     else

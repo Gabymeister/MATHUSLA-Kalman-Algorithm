@@ -423,7 +423,8 @@ void TrackFinder::FindTracks_kalman()
 
 			double ndof = good_hits.size();
 			ndof = (3.0 * ndof - 6.0)/ndof;
-			ndof = ndof > 1.0 ?  ndof: 1.0;
+			// ndof = ndof > 1.0 ?  ndof: 1.0;
+			ndof = 3.0;
 
 			//dropping hits
 			for (int n = 0; n < good_hits.size(); n++)

@@ -8,17 +8,13 @@ This repository containts a Kalman Filter Tracking Algorithm based on architectu
 
 ## Installation
 
-Most of the dependencies and necessary libraries for this code are available through the anaconda software. If you do not have anaconda, it can be installed following the directions here: https://docs.anaconda.com/anaconda/install/
+The code requires installation of `gcc`,`ROOT`,`eigen` and `dlib` to compile. 
 
-Once anaconda is installed, the enviornment can be created using the .yml file available in this repository as follows. From the top directory:
-
+On cedar, `gcc`,`ROOT`,`eigen` can be loaded with the module command, and dlib can be added with an installation in my directory. 
 ```bash
-$ conda env create -f env/environment.yml
-$ conda activate tracker
+$ module load qt/5.15.2 gcc/9.3.0 StdEnv/2020   root/6.26.06  eigen/3.3.7
+$ PATH=$PATH:/project/def-mdiamond/tomren/mathusla/dlib-19.24/install
 ```
-You will also need the Eigen Library for c++ and to install the joblib package to python.
-
-Note: joblib can be installed through anaconda, Eigen does not require installation. You can downlowd the tar ball from here https://eigen.tuxfamily.org/dox/index.html , then unzip it. If cmake cannot find the directory automatically, you will need to point it to the unzipped eigen directory by setting the EIGEN3_INCLUDE_DIR variable in /tracker/CMakeLists.txt and commenting out the corresponding include_directories command. 
 
 Now, the project can be built using cmake:
 
@@ -49,19 +45,19 @@ Job submission scripts for parallelising the tracker or analysis code for large 
 
 ### Tracker configuration
 
-Tracker parameters are stored in a txt file located at `tracker/run/par_card.txt`
+Tracker configuration parameters are stored in a txt file located at `tracker/run/par_card.txt`
 The parameters are explained in the table below:
 
-| parameter name | usage | unit|
+| Parameter name | Usage | Default value [unit]|
 |:--------------|:-------------------------|:---|
 |branch              | 0 or 1, 0 for nomal mode and 1 for COSMIC mode |
 |debug               | 0 of 1, 1 to turn on debug information| |
-|seed                | (float, default =1.0) initial seed value for random generator. Set to -1 to use arbiturary seed| |
-|seed_interval               | (float, default =1.0) Maximum interval for track seeding. Interval defined as ds^2 = dr^2-(c*dt)^2| |
+|seed                | initial seed value for random generator. Set to -1 to use arbiturary seed|1.0 |
+|seed_interval               |Maximum interval for track seeding. Interval defined as ds^2 = dr^2-(c*dt)^2| 7|
 |kalman_chi_s                | DEPRECATED                   | |
-|kalman_chi_add              | (float, default=200) The maximum accepted chi2 increment for new hit added to the Kalman filter                   | |
-|kalman_track_chi                | (float, default=15) Cut on final track reduced-chi2 after smoothing| |
-|kalman_pval_drop                | (float, default=1.0) Cut on the smoothed chi2 during dropping steps. If the P value when a hit is added is larger than this number, the hit is dropped                 | |
+|kalman_chi_add              |  The maximum accepted chi2 increment for new hit added to the Kalman filter                   | 200|
+|kalman_track_chi                |Cut on final track chi2/ndof after smoothing| 15|
+|kalman_pval_drop                | Cut on the smoothed chi2 P-value during dropping steps. If the P value when a hit is added is larger than this number, the hit is dropped                 | 1.0|
 |kalman_pval_add             | 0.99                 | |
 |kalman_pval_track               | 0.95                 | |
 |p               | 500.0                    | |

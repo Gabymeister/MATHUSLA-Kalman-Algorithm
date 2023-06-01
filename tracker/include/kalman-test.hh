@@ -47,6 +47,7 @@ public:
   kalman_track(){};
 
   seed choose_seed(seed* current_seed);
+  seed seed_in_use;
 
   void kalman_all(std::vector<physics::digi_hit *> trackhits, seed *current_seed);
 

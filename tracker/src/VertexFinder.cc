@@ -47,12 +47,14 @@ void VertexFinder::FindVertices_k_m_hybrid()
 		std::vector<physics::track *> unused_tracks = {};
 
 		auto current_seed = seeds_k_m[0];
+		auto seed_midpoint = current_seed.guess();
 
 		seeds_k_m.erase(seeds_k_m.begin());
 
 		for (auto tr : tracks_k_m)
 		{
-			if (current_seed.closest_approach(tr) < par_handler->par_map["closest_approach_add"])
+			// if (current_seed.closest_approach(tr) < par_handler->par_map["closest_approach_add"]) // Tom: I think this is wrong. We should calculate the distance to the best guess of the seed, not the individual tracks in the seed. 
+			if (tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]) < par_handler->par_map["closest_approach_add"])
 			{
 				used_tracks.push_back(tr);
 			}
