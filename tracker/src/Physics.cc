@@ -176,13 +176,6 @@ namespace physics {
 
     	double dist = distance_to(point, t);
 
-    	// derivatives[0] = ((t-t0)*vx - x + x0)/dist;
-    	// //derivatives[1] = detector::scintillator_height;
-    	// derivatives[1] = ((t-t0)*vz - z + z0)/dist;
-    	// derivatives[2] = (t-t0)*((t-t0)*vx - x + x0)/dist;
-    	// derivatives[3] = (t-t0)*((t-t0)*vy - y + y0)/dist;
-    	// derivatives[4] = (t-t0)*((t-t0)*vz - z + z0)/dist;
-    	// derivatives[5] = -1.0*(vx*((t-t0)*vx - x + x0) + vy*((t-t0)*vy - y + y0) + vz*((t-t0)*vz - z + z0))/dist;
 
     	derivatives[0] = ((t-t0)*vx - x + x0)/dist;
     	derivatives[1] = ((t-t0)*vy - y + y0)/dist;
@@ -215,44 +208,36 @@ namespace physics {
     	auto y = point.y;
     	auto z = point.z;
 
-    	double dist = distance_to(point, t);
 
 		auto dy = y-y0;
-		auto dt = t0+dy/vy-t;
+		auto err_t = t0+dy/vy-t;
 		auto err_x = x0 + vx*dy/vy -x;
 		auto err_z = z0 + vz*dy/vy -z;
 
+    	double dist = TMath::Sqrt(err_x*err_x + err_z*err_z + err_t*err_t);
+
+
     	derivatives[0] = err_x/dist;
-    	derivatives[1] = -(err_x*vx/vy + err_z*vz/vy)/dist;
+    	derivatives[1] = -(err_x*vx/vy + err_z*vz/vy + err_t/vy)/dist;
     	derivatives[2] = err_z/dist;
     	derivatives[3] = err_x*dy/vy/dist;
-    	derivatives[4] = -(err_x*vx*dy/(vy*vy) + err_z*vz*dy/(vy*vy))/dist;
+    	derivatives[4] = -(err_x*vx*dy/(vy*vy) + err_z*vz*dy/(vy*vy) + err_t*dy/(vy*vy))/dist;
     	derivatives[5] = err_z*dy/vy/dist;
-    	derivatives[6] = 0;
+    	derivatives[6] = 1;
 
-		derivatives_time[0] = 0;
-		derivatives_time[1] = -1/vy;
-		derivatives_time[2] = 0;
-		derivatives_time[3] = 0;
-		derivatives_time[4] = -dy/vy/vy;
-		derivatives_time[5] = 0;
-		derivatives_time[6] = 1;
 
     	//now we calculate the actual error
     	double error = 0.0;
-    	double error_time = 0.0;
 
     	for (int i = 0; i < derivatives.size(); i++){
     		for (int j = 0; j < derivatives.size(); j++){
 				// std::cout<<"i: "<<i<<" ,j: "<<j<<std::endl;
     			error += derivatives[i]*derivatives[j]*_CovMatrix[i][j];
-    			error_time += derivatives_time[i]*derivatives_time[j]*_CovMatrix[i][j];
     		}
     	}
 
 		auto nll = 0.5 * (dist*dist / error) + 0.5 * TMath::Log(error)
-				 + 0.5 * (dt*dt/error_time) + 0.5 * TMath::Log(error_time) 
-				 + 2*0.5* TMath::Log(2*3.141592653589);
+				 + 0.5* TMath::Log(2*3.141592653589);
 
     	return nll;
     }	
@@ -277,9 +262,18 @@ namespace physics {
 			for (int jj=0; jj<7; jj++){
 				CovMatrix_track(ii,jj) = _CovMatrix[ii][jj];
 			}
-		}		
+		}
+
+
 		// Calculate the final uncertainty matrix of (_x,_z,t)
 		auto CovMatrix_vertex = jac * CovMatrix_track * jac.transpose();
+		
+		// std::cout<<"Track cov"<<std::endl;
+		// std::cout<<CovMatrix_track<<std::endl;
+		// std::cout<<"Point cov"<<std::endl;
+		// std::cout<<CovMatrix_vertex<<std::endl;
+		// std::cout<<"vx, vy, vz, dt"<<std::endl;
+		// std::cout<<vx<<" "<<vy<<" "<<vz<<" "<<dy/vy<<" "<<std::endl;
 
     	//now we calculate the Chi2
 		Eigen::VectorXd residual_vector(3);

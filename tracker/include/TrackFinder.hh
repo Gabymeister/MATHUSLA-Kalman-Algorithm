@@ -213,15 +213,15 @@ public:
 
 
 		if(dlayer==3){
-			if (layer1_ind==2){dlayer_mapped=0;}
-			else if (layer1_ind==3){dlayer_mapped=1;}
-			else			  {dlayer_mapped=2;}
+			if (layer1_ind==2)		{dlayer_mapped=0;}
+			else if (layer1_ind==3)	{dlayer_mapped=1;}
+			else			  		{dlayer_mapped=2;}
+			}	
+		else if(dlayer==5){
+			if (layer1_ind==2)		{dlayer_mapped=3;}
+			else if (layer1_ind==3)	{dlayer_mapped=4;}
+			else			 		{dlayer_mapped=5;}
 			}
-		if(dlayer==5){
-			if (layer1_ind==2){dlayer_mapped=3;}
-			else if (layer1_ind==3){dlayer_mapped=4;}
-			else			  {dlayer_mapped=5;}
-			}			
 		else if(dlayer==7){dlayer_mapped=6;}
 		else if(dlayer==6){dlayer_mapped=7;}
 		else if(dlayer==4){dlayer_mapped=8;}

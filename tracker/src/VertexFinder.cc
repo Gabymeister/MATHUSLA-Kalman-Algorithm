@@ -58,6 +58,10 @@ void VertexFinder::FindVertices_k_m_hybrid()
 			{
 				used_tracks.push_back(tr);
 			}
+			// Special treatment for tracks in seed: add them directly even if they do not pass the distance cut.
+			else if (tr->index==current_seed.tracks.first->index || tr->index==current_seed.tracks.second->index){
+				used_tracks.push_back(tr);
+			}
 			else
 			{
 				unused_tracks.push_back(tr);
@@ -244,12 +248,12 @@ void VertexFitter::nll(int &npar, double *gin, double &f, double *pars, int ifla
 		// -- Use Negative Log Likelihood
 		// double err = track->err_distance_to(Vector(_x, _y, _z), _t);
 		// error += 0.5 * (dist / err) * (dist / err) + TMath::Log(err);
+		// error += track->err_distance_to_mod(Vector(_x, _y, _z), _t);
 
 		// -- Use chi2 instead
-		double err = track->chi2_distance_to(Vector(_x, _y, _z), _t);
-		error += err;
+		error += track->chi2_distance_to(Vector(_x, _y, _z), _t);
 
-		// error += track->err_distance_to_mod(Vector(_x, _y, _z), _t);
+
 		
 
 		if (isnan(error))

@@ -50,7 +50,7 @@ The parameters are explained in the table below:
 
 | Parameter name | Usage | Default value [unit]|
 |:--------------|:-------------------------|:---|
-|branch              | 0 or 1, 0 for nomal mode and 1 for COSMIC mode |
+|branch              | 0 or 1, 0 for nomal mode and 1 for COSMIC mode | 0|
 |debug               | 0 of 1, 1 to turn on debug information| |
 |seed                | initial seed value for random generator. Set to -1 to use arbiturary seed|1.0 |
 |seed_interval               |Maximum interval for track seeding. Interval defined as ds^2 = dr^2-(c*dt)^2| 7|

@@ -186,6 +186,7 @@ public:
         OutputTree->Branch("Digi_pz", &digi_hit_pz);
         OutputTree->Branch("Digi_particle_energy", &digi_particle_energy);
         OutputTree->Branch("Digi_pdg_id", &digi_pdg);
+        OutputTree->Branch("Digi_track_id", &digi_track_id);
         OutputTree->Branch("Digi_seed", &digi_seed, "Digi_seed/L");
 //        OutputTree->Branch("Digi_hitIndices", &digi_hit_indices);
 
@@ -232,6 +233,12 @@ public:
         OutputTree->Branch("Vertex_k_m_x", &vertex_k_m_x);
         OutputTree->Branch("Vertex_k_m_y", &vertex_k_m_y);
         OutputTree->Branch("Vertex_k_m_z", &vertex_k_m_z);
+        OutputTree->Branch("Vertex_k_m_cov_t_x", &vertex_k_m_cov_t_x);
+        OutputTree->Branch("Vertex_k_m_cov_t_y", &vertex_k_m_cov_t_y);
+        OutputTree->Branch("Vertex_k_m_cov_t_z", &vertex_k_m_cov_t_z);
+        OutputTree->Branch("Vertex_k_m_cov_x_y", &vertex_k_m_cov_x_y);
+        OutputTree->Branch("Vertex_k_m_cov_x_z", &vertex_k_m_cov_x_z);
+        OutputTree->Branch("Vertex_k_m_cov_y_z", &vertex_k_m_cov_y_z);
       	OutputTree->Branch("Vertex_k_m_ErrorT", &vertex_t_k_m_error);
       	OutputTree->Branch("Vertex_k_m_ErrorX", &vertex_x_k_m_error);
       	OutputTree->Branch("Vertex_k_m_ErrorY", &vertex_y_k_m_error);
@@ -373,6 +380,12 @@ public:
 	std::vector<double>	vertex_k_m_x;
 	std::vector<double>	vertex_k_m_y;
 	std::vector<double>	vertex_k_m_z;
+	std::vector<double>	vertex_k_m_cov_t_x;
+	std::vector<double>	vertex_k_m_cov_t_y;
+	std::vector<double>	vertex_k_m_cov_t_z;
+	std::vector<double>	vertex_k_m_cov_x_y;
+	std::vector<double>	vertex_k_m_cov_x_z;
+	std::vector<double>	vertex_k_m_cov_y_z;
   	std::vector<double> vertex_t_k_m_error;
   	std::vector<double> vertex_x_k_m_error;
   	std::vector<double> vertex_y_k_m_error;
@@ -459,6 +472,7 @@ public:
   	std::vector<double> digi_hit_pz;
     std::vector<double> digi_particle_energy;
     std::vector<int> digi_pdg;
+    std::vector<int> digi_track_id;
   	std::vector<int> digi_hit_indices;
   	std::vector<int> Digi_numHits;
     long long int digi_seed;
@@ -479,6 +493,7 @@ void TreeHandler::ExportDigis(std::vector<digi_hit*> digi_list, long long int se
       Digi_numHits.clear();
       digi_particle_energy.clear();
       digi_pdg.clear();
+	  digi_track_id.clear();
       
       digi_seed = seed;
 
@@ -494,6 +509,7 @@ void TreeHandler::ExportDigis(std::vector<digi_hit*> digi_list, long long int se
         digi_hit_pz.push_back(digi->pz);
         digi_particle_energy.push_back(digi->particle_energy);
         digi_pdg.push_back(digi->pdg);
+		digi_track_id.push_back(digi->min_track_id);
         for (auto hit : digi->hits){
           digi_hit_indices.push_back(hit->index);
         }
@@ -721,7 +737,12 @@ void TreeHandler::ExportVertices_k_m(std::vector<vertex*> vertices){
 	vertex_k_f_beta.clear();
 	vertex_k_s_beta.clear();
 	vertex_k_s_beta_err.clear();
-
+	vertex_k_m_cov_t_x.clear();
+	vertex_k_m_cov_t_y.clear();
+	vertex_k_m_cov_t_z.clear();
+	vertex_k_m_cov_x_y.clear();
+	vertex_k_m_cov_x_z.clear();
+	vertex_k_m_cov_y_z.clear();
 	vertex_t_k_m_error.clear();
 	vertex_x_k_m_error.clear();
 	vertex_y_k_m_error.clear();
@@ -740,6 +761,13 @@ void TreeHandler::ExportVertices_k_m(std::vector<vertex*> vertices){
 		vertex_y_k_m_error.push_back(sqrt(v->CovMatrix()[1][1]));
 		vertex_z_k_m_error.push_back(sqrt(v->CovMatrix()[2][2]));
 		vertex_t_k_m_error.push_back(sqrt(v->CovMatrix()[3][3]));
+		vertex_k_m_cov_t_x.push_back(v->CovMatrix()[3][0]);
+		vertex_k_m_cov_t_y.push_back(v->CovMatrix()[3][1]);
+		vertex_k_m_cov_t_z.push_back(v->CovMatrix()[3][2]);
+		vertex_k_m_cov_x_y.push_back(v->CovMatrix()[0][1]);
+		vertex_k_m_cov_x_z.push_back(v->CovMatrix()[0][2]);
+		vertex_k_m_cov_y_z.push_back(v->CovMatrix()[1][2]);
+
 
 		vertex_k_m_chi2_per_dof.push_back(v->merit());
 

@@ -8,7 +8,15 @@
 class vertex_seed
 {
 public:
-	double score() { return tracks.first->closest_approach(tracks.second); }
+	double score() { 
+		// Previous score (2023.6.6)
+		// return tracks.first->closest_approach(tracks.second); 
+
+		// New score: distance [cm] - total_layers*100
+		auto score_distance = tracks.first->closest_approach(tracks.second);
+		float score_layers = -100.0* (tracks.first->chi_s.size()+tracks.second->chi_s.size());
+		return score_distance+score_layers;
+		}
 
 	std::pair<physics::track *, physics::track *> tracks;
 

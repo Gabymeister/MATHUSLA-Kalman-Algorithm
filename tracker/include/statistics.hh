@@ -158,7 +158,7 @@ public:
 
 		double first_step_size = 0.010;
 		auto maxcalls = 500000.0;
-		auto tolerance = 0.01;
+		auto tolerance = 0.1;
 		double arglist[2];
 		arglist[0] = maxcalls;
 		arglist[1] = tolerance;
@@ -171,9 +171,9 @@ public:
 		double min_y = detector::y_min - 10.0 * units::cm;
 		double max_y = detector::y_max + 10.0 * units::cm;
 
-		minimizer.mnparm(0, "x", guess[0], first_step_size, 0, 0, ierflg);
-		minimizer.mnparm(1, "y", guess[1], first_step_size, 0, 0, ierflg);
-		minimizer.mnparm(2, "z", guess[2], first_step_size, 0, 0, ierflg);
+		minimizer.mnparm(0, "x", guess[0], 1.0, 0, 0, ierflg);
+		minimizer.mnparm(1, "y", guess[1], 1.0, 0, 0, ierflg);
+		minimizer.mnparm(2, "z", guess[2], 1.0, 0, 0, ierflg);
 		minimizer.mnparm(3, "t", guess[3], first_step_size, 0, 0, ierflg);
 
 		minimizer.mnexcm("MIGRAD", arglist, 2, ierflg);
