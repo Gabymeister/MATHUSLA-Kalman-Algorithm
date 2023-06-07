@@ -242,6 +242,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 				digi->x = center[0];
 			}
 		}
+		digi->long_direction_index = long_direction_index;
 
 		//TIME AND POSITION SMEARING!!!!!!!!!!!!!!!
 		//we see the random number generator with a number that should be completly random:

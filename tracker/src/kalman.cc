@@ -120,22 +120,24 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
     throw std::runtime_error("Filter is not initialized!");
 
   // indices of lowest two chis in the layer
-  //std::vector<int> hit_inds = find_nearest(y_list, x_hat_new);
   std::vector<int> hit_inds = find_nearest(y_list, x_hat);
+  // // if there is energy sharing, merge the hit with lowest chi2 with the one in the adjacent bar
 
-  // hit_inds[0] is index of hit w lowest chi that meets beta cut
+  // Select the hit with lowest chi2. hit_inds[0] is index of hit w lowest chi that meets beta cut
   physics::digi_hit *y;
   y = y_list[hit_inds[0]];
 
+  // remove adjacent hits
+  // ** This function was actually turned off, but kept here for its other purpose of logging unused hits.
   king_moves_algorithm(y_list, hit_inds);
 
-  // no good hit was found
+  // end if no good hit was found
   if (hit_inds[0] == -1)
-    return -1.0;
+    return -1.0;  
 
-  // take any hit because errors are the same for all layers
-//  update_matrices(y_list[0]);
-  update_matrices(y_list[hit_inds[0]]);
+
+  // update matrices, using the hit with minimum chi2
+  update_matrices(y);
 
   //x_hat_new = A * x_hat;
   x_hat_new = f_matrix * x_hat; // In EKF, we should use the non-linear function to predict the state, and use the Jacobian A to predict the covariance.

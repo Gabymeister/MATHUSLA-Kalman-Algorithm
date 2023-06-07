@@ -69,6 +69,7 @@ namespace physics{
 	public:
 		detID det_id;
 		std::size_t index;
+        int long_direction_index; //1 for odd layer, 0 for even layer
 		double x, ex;
 		double y, ey;
 		double z, ez;

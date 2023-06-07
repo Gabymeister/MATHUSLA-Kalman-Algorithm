@@ -212,21 +212,35 @@ public:
 		double dlayer_mapped=0;
 
 
-		if(dlayer==3){
-			if (layer1_ind==2)		{dlayer_mapped=0;}
-			else if (layer1_ind==3)	{dlayer_mapped=1;}
-			else			  		{dlayer_mapped=2;}
-			}	
-		else if(dlayer==5){
-			if (layer1_ind==2)		{dlayer_mapped=3;}
-			else if (layer1_ind==3)	{dlayer_mapped=4;}
-			else			 		{dlayer_mapped=5;}
-			}
-		else if(dlayer==7){dlayer_mapped=6;}
-		else if(dlayer==6){dlayer_mapped=7;}
-		else if(dlayer==4){dlayer_mapped=8;}
-		else if(dlayer==2){dlayer_mapped=9;}
-		else if(dlayer==1){dlayer_mapped=10;}
+		// if(dlayer==3){
+		// 	if (layer1_ind==2)		{dlayer_mapped=0;}
+		// 	else if (layer1_ind==3)	{dlayer_mapped=1;}
+		// 	else			  		{dlayer_mapped=2;}
+		// 	}	
+		// else if(dlayer==2){
+		// 	if (layer1_ind==2)		{dlayer_mapped=2;}
+		// 	else if (layer1_ind==3)	{dlayer_mapped=3;}
+		// 	else			 		{dlayer_mapped=10;}
+		// 	}
+		// else if(dlayer==4){
+		// 	if (layer1_ind==2)		{dlayer_mapped=6;}
+		// 	else if (layer1_ind==3)	{dlayer_mapped=7;}
+		// 	else			 		{dlayer_mapped=8;}
+		// 	}			
+		// else if(dlayer==5){dlayer_mapped=9;}
+		// else if(dlayer==7){dlayer_mapped=10;}
+		// else if(dlayer==6){dlayer_mapped=11;}
+		// else if(dlayer==1){dlayer_mapped=12;}
+		if     ((layer1_ind==2 && dlayer==3)){dlayer_mapped=0;}
+		else if((layer1_ind==3 && dlayer==1 && (TMath::Abs(dy)>101))){dlayer_mapped=1;}
+		else if((layer1_ind==2 || layer1_ind==3) && (TMath::Abs(dy)>101) ){dlayer_mapped=2;}
+		else if(dlayer==3){dlayer_mapped=3;}
+		else if(dlayer==5){dlayer_mapped=4;}
+		else if(dlayer==7){dlayer_mapped=5;}
+		else if(dlayer==2){dlayer_mapped=6;}
+		else if(dlayer==4){dlayer_mapped=7;}
+		else if(dlayer==6){dlayer_mapped=8;}		
+		else if(dlayer==1){dlayer_mapped=8;}		
 
 		// return TMath::Abs((dx * dx + dy * dy + dz * dz) / (constants::c * constants::c) - dt * dt);
 		// return TMath::Abs(TMath::Sqrt((dx * dx + dy * dy + dz * dz))/dt - constants::c) + TMath::Abs(dlayer*300);
