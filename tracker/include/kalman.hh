@@ -189,6 +189,8 @@ public:
   double update_means(const std::vector<physics::track *> tracks);
 
   void king_moves_algorithm(const std::vector<physics::digi_hit *> y_list, std::vector<int> hit_inds);
+  physics::digi_hit* merge_enery_sharing(const std::vector<physics::digi_hit *> &y_list, const std::vector<int> &hit_inds);
+  bool SECOND_HIT_SKIPPED=false;
 
   double smooth_gain(const physics::digi_hit *y, int k);
   double smooth_means(int k);
@@ -218,6 +220,7 @@ public:
   std::vector<physics::digi_hit *> unadded_hits;
   std::vector<physics::track *> added_tracks;
   std::vector<physics::track *> unadded_tracks;
+  physics::digi_hit * merged_hit;
 
   // chi square value
   double chi;

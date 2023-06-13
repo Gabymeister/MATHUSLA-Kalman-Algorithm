@@ -113,6 +113,61 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y, doubl
   return chi;
 }
 
+physics::digi_hit* KalmanFilter::merge_enery_sharing(const std::vector<physics::digi_hit *> &y_list, const std::vector<int> &hit_inds)
+{
+  if(hit_inds[0]==-1) {
+    merged_hit = new physics::digi_hit();
+    return merged_hit;}
+  else if (hit_inds[1]==-1) return y_list[hit_inds[0]];
+  else {
+    auto hit0 = y_list[hit_inds[0]];
+    auto hit1 = y_list[hit_inds[1]];
+    auto long_direction_index = hit0->long_direction_index;
+
+    // Get the distance between two events
+    double dist_short,dist_long,dist_time;
+    if (long_direction_index == 0) // if even layer, bars perpendicualr to beamline (z), z has better resolution
+    {
+      dist_short = std::abs(hit0->z - hit1->z);
+      dist_long = std::abs(hit0->x - hit1->x);
+      dist_time = std::abs(hit0->t - hit1->t);
+    }
+    else // if odd  layer, bars perpendicualr to x, x has better resolution
+    {
+      dist_short = std::abs(hit0->x - hit1->x);
+      dist_long = std::abs(hit0->z - hit1->z);
+      dist_time = std::abs(hit0->t - hit1->t);
+    }  
+
+    // if they are 1) from adjacent bars, and 2) with delta_time<2sigma, 3) delta_long_dist<2 sigma, merge the hits
+    int nsigma=2;
+    if ((dist_short<=detector::scintillator_width*1.1) && dist_long<(detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2)*nsigma) && dist_time<(detector::time_resolution*nsigma) )  
+    {
+      merged_hit = hit0;
+
+      // Make hit1 the average of (hit0, hit1)
+      merged_hit->x = 0.5*(hit0->x+hit1->x);
+      merged_hit->y = 0.5*(hit0->y+hit1->y);
+      merged_hit->z = 0.5*(hit0->z+hit1->z);
+      merged_hit->t = 0.5*(hit0->t+hit1->t);
+      merged_hit->ex = merged_hit->ex /sqrt(2);
+      merged_hit->ey = merged_hit->ey /sqrt(2);
+      merged_hit->ez = merged_hit->ez /sqrt(2);
+      merged_hit->et = merged_hit->et /sqrt(2);
+      SECOND_HIT_SKIPPED=true;
+
+      // erase hit1
+      // y_list.erase(y_list.begin()+hit_inds[1]);
+      // if (hit_inds[1]<hit_inds[0]){
+      //   hit_inds[0]-=1;
+      // }
+    }
+
+    return y_list[hit_inds[0]];
+
+  }
+}
+
 double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
 { // predict and filter using the digi hits in the layer for tracker
 
@@ -126,6 +181,8 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
   // Select the hit with lowest chi2. hit_inds[0] is index of hit w lowest chi that meets beta cut
   physics::digi_hit *y;
   y = y_list[hit_inds[0]];
+
+  y = merge_enery_sharing(y_list, hit_inds);
 
   // remove adjacent hits
   // ** This function was actually turned off, but kept here for its other purpose of logging unused hits.
@@ -210,6 +267,10 @@ void KalmanFilter::king_moves_algorithm(const std::vector<physics::digi_hit *> y
     else if (i == hit_inds[1])
 //    if (i == hit_inds[1])
     {
+      if (SECOND_HIT_SKIPPED){
+        SECOND_HIT_SKIPPED=false;
+        continue;
+      }
       update_matrices(y_list[i]);
       x_hat_new = f_matrix * x_hat;
 

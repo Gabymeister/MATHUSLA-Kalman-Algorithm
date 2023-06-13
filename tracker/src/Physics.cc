@@ -242,19 +242,61 @@ namespace physics {
     	return nll;
     }	
 
+	// double track::chi2_distance_to(Vector point, double t){
+
+    // 	auto _x = point.x;
+    // 	auto _y = point.y;
+    // 	auto _z = point.z;
+	// 	double dy = _y - y0;
+
+	// 	// Jacobian from (_x,_z,t) to (x0,y0,z0, vx,vy,vz, t)
+	// 	Eigen::MatrixXd jac;
+	// 	jac = Eigen::MatrixXd::Zero(3, 7);
+	// 	jac << 	1, -vx/vy,	0,	 	dy/vy,	-vx*dy/(vy*vy),		0,		0,
+	// 		   	0, -vz/vy,  1,			0,	-vz*dy/(vy*vy),	dy/vy,		0,
+	// 			0,  -1/vy, 	0,			0,	   -dy/(vy*vy),		0, 		1;
+	// 	// Copy the covariance matrix of (x0,y0,z0, vx,vy,vz, t) into an Eigen matrix
+	// 	Eigen::MatrixXd CovMatrix_track;
+	// 	CovMatrix_track = Eigen::MatrixXd::Zero(7, 7);
+	// 	for (int ii=0; ii<7; ii++){
+	// 		for (int jj=0; jj<7; jj++){
+	// 			CovMatrix_track(ii,jj) = _CovMatrix[ii][jj];
+	// 		}
+	// 	}
+
+
+	// 	// Calculate the final uncertainty matrix of (_x,_z,t)
+	// 	auto CovMatrix_vertex = jac * CovMatrix_track * jac.transpose();
+		
+	// 	// std::cout<<"Track cov"<<std::endl;
+	// 	// std::cout<<CovMatrix_track<<std::endl;
+	// 	// std::cout<<"Point cov"<<std::endl;
+	// 	// std::cout<<CovMatrix_vertex<<std::endl;
+	// 	// std::cout<<"vx, vy, vz, dt"<<std::endl;
+	// 	// std::cout<<vx<<" "<<vy<<" "<<vz<<" "<<dy/vy<<" "<<std::endl;
+
+    // 	//now we calculate the Chi2
+	// 	Eigen::VectorXd residual_vector(3);
+	// 	residual_vector<<		_x - (x0+vx*dy/vy), 	_z- (z0+vz*dy/vy),		t- (t0+dy/vy);
+    // 	auto error = residual_vector.transpose()*CovMatrix_vertex.inverse()*residual_vector;
+
+    // 	return error;
+    // }	
+
+
 	double track::chi2_distance_to(Vector point, double t){
 
     	auto _x = point.x;
     	auto _y = point.y;
     	auto _z = point.z;
-		double dy = _y - y0;
+		double dt = t - t0;
 
 		// Jacobian from (_x,_z,t) to (x0,y0,z0, vx,vy,vz, t)
 		Eigen::MatrixXd jac;
 		jac = Eigen::MatrixXd::Zero(3, 7);
-		jac << 	1, -vx/vy,	0,	 	dy/vy,	-vx*dy/(vy*vy),		0,		0,
-			   	0, -vz/vy,  1,			0,	-vz*dy/(vy*vy),	dy/vy,		0,
-				0,  -1/vy, 	0,			0,	   -dy/(vy*vy),		0, 		1;
+		jac << 	1, 		0,	0,	 		dt,	0,		0,		-vx,
+			   	0, 		1,  0,			0,	dt,		0,		-vy,
+				0,  	0, 	1,			0,	0,		dt, 	-vz;
 		// Copy the covariance matrix of (x0,y0,z0, vx,vy,vz, t) into an Eigen matrix
 		Eigen::MatrixXd CovMatrix_track;
 		CovMatrix_track = Eigen::MatrixXd::Zero(7, 7);
@@ -264,24 +306,16 @@ namespace physics {
 			}
 		}
 
-
 		// Calculate the final uncertainty matrix of (_x,_z,t)
 		auto CovMatrix_vertex = jac * CovMatrix_track * jac.transpose();
-		
-		// std::cout<<"Track cov"<<std::endl;
-		// std::cout<<CovMatrix_track<<std::endl;
-		// std::cout<<"Point cov"<<std::endl;
-		// std::cout<<CovMatrix_vertex<<std::endl;
-		// std::cout<<"vx, vy, vz, dt"<<std::endl;
-		// std::cout<<vx<<" "<<vy<<" "<<vz<<" "<<dy/vy<<" "<<std::endl;
 
     	//now we calculate the Chi2
 		Eigen::VectorXd residual_vector(3);
-		residual_vector<<		_x - (x0+vx*dy/vy), 	_z- (z0+vz*dy/vy),		t- (t0+dy/vy);
+		residual_vector<<		_x - (x0+vx*dt), 	_y- (y0+vy*dt), 	_z- (z0+vz*dt);
     	auto error = residual_vector.transpose()*CovMatrix_vertex.inverse()*residual_vector;
 
     	return error;
-    }	
+    }		
 
 
     double track::vertex_residual(std::vector<double> params){
