@@ -123,27 +123,36 @@ public:
 	static bool bad_fit;
 	static double cov_matrix[npar][npar];
 	static double _merit;
-	//	double merit(){return _merit;}
+	double ndof =1;
 
-	double merit()
+
+	double merit(){
+		return _merit / ndof;
+	}
+
+	std::vector<double> delta_chi2()
 	{
-		double chi2 = 0.0;
+		std::vector<double> delta_chi2_list;
 
 		for (auto track : track_list)
 		{
-			chi2 += track->vertex_residual(parameters);
+			delta_chi2_list.push_back(track->vertex_residual(parameters));
 		}
 
 		// double ndof = static_cast<double>(npar * (track_list.size() - 1));
-		double ndof = static_cast<double>(3 * (track_list.size())- npar);
-		ndof = ndof > 1. ? ndof : 1.0;
-		return chi2 / ndof;
+		// double ndof = static_cast<double>(3 * (track_list.size())- npar);
+		// ndof = ndof > 1. ? ndof : 1.0;
+		// std::cout<<"   NDOF"<<ndof<<std::endl;
+
+		return delta_chi2_list;
 	}
 
 	bool fit(std::vector<physics::track *> _track_list, std::vector<double> arg_guess = {})
 	{
 
 		track_list = _track_list;
+		ndof = static_cast<double>(3 * (track_list.size())- npar);
+		ndof = ndof > 1. ? ndof : 1.0;
 
 		bad_fit = false;
 

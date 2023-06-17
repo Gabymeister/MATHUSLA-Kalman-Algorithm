@@ -286,6 +286,42 @@ namespace physics {
 
 	double track::chi2_distance_to(Vector point, double t){
 
+    	// auto _x = point.x;
+    	// auto _y = point.y;
+    	// auto _z = point.z;
+		// double dt = t - t0;
+
+		// // Jacobian from (_x,_z,t) to (x0,y0,z0, vx,vy,vz, t)
+		// Eigen::MatrixXd jac;
+		// jac = Eigen::MatrixXd::Zero(3, 7);
+		// jac << 	1, 		0,	0,	 		dt,	0,		0,		-vx,
+		// 	   	0, 		1,  0,			0,	dt,		0,		-vy,
+		// 		0,  	0, 	1,			0,	0,		dt, 	-vz;
+		// // Copy the covariance matrix of (x0,y0,z0, vx,vy,vz, t) into an Eigen matrix
+		// Eigen::MatrixXd CovMatrix_track;
+		// CovMatrix_track = Eigen::MatrixXd::Zero(7, 7);
+		// for (int ii=0; ii<7; ii++){
+		// 	for (int jj=0; jj<7; jj++){
+		// 		CovMatrix_track(ii,jj) = _CovMatrix[ii][jj];
+		// 	}
+		// }
+
+		// // Calculate the final uncertainty matrix of (_x,_z,t)
+		// auto CovMatrix_vertex = jac * CovMatrix_track * jac.transpose();
+
+    	// //now we calculate the Chi2
+		// Eigen::VectorXd residual_vector(3);
+		// residual_vector<<		_x - (x0+vx*dt), 	_y- (y0+vy*dt), 	_z- (z0+vz*dt);
+    	// auto error = residual_vector.transpose()*CovMatrix_vertex.inverse()*residual_vector;
+
+    	// return error;
+
+		return chi2_distance_to_pointerror(point, t, {0,0,0});
+    }		
+
+
+	double track::chi2_distance_to_pointerror(Vector point, double t, std::vector <double> point_err){
+
     	auto _x = point.x;
     	auto _y = point.y;
     	auto _z = point.z;
@@ -307,7 +343,10 @@ namespace physics {
 		}
 
 		// Calculate the final uncertainty matrix of (_x,_z,t)
-		auto CovMatrix_vertex = jac * CovMatrix_track * jac.transpose();
+		Eigen::MatrixXd CovMatrix_vertex = jac * CovMatrix_track * jac.transpose();
+		CovMatrix_vertex(0,0)=CovMatrix_vertex(0,0)+point_err.at(0)*point_err.at(0);
+		CovMatrix_vertex(1,1)=CovMatrix_vertex(1,1)+point_err.at(1)*point_err.at(1);
+		CovMatrix_vertex(2,2)=CovMatrix_vertex(2,2)+point_err.at(2)*point_err.at(2);
 
     	//now we calculate the Chi2
 		Eigen::VectorXd residual_vector(3);
@@ -316,7 +355,6 @@ namespace physics {
 
     	return error;
     }		
-
 
     double track::vertex_residual(std::vector<double> params){
 

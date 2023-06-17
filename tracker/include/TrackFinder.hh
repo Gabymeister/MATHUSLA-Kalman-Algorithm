@@ -207,45 +207,12 @@ public:
 		double dy = hit1->y - hit2->y;
 		double dz = hit1->z - hit2->z;
 		double dt = hit1->t - hit2->t;
-		int layer1_ind = (hit1->det_id).layerIndex;
-		int dlayer = TMath::Abs((hit1->det_id).layerIndex - (hit2->det_id).layerIndex);
-		double dlayer_mapped=0;
 
 
-		// if(dlayer==3){
-		// 	if (layer1_ind==2)		{dlayer_mapped=0;}
-		// 	else if (layer1_ind==3)	{dlayer_mapped=1;}
-		// 	else			  		{dlayer_mapped=2;}
-		// 	}	
-		// else if(dlayer==2){
-		// 	if (layer1_ind==2)		{dlayer_mapped=2;}
-		// 	else if (layer1_ind==3)	{dlayer_mapped=3;}
-		// 	else			 		{dlayer_mapped=10;}
-		// 	}
-		// else if(dlayer==4){
-		// 	if (layer1_ind==2)		{dlayer_mapped=6;}
-		// 	else if (layer1_ind==3)	{dlayer_mapped=7;}
-		// 	else			 		{dlayer_mapped=8;}
-		// 	}			
-		// else if(dlayer==5){dlayer_mapped=9;}
-		// else if(dlayer==7){dlayer_mapped=10;}
-		// else if(dlayer==6){dlayer_mapped=11;}
-		// else if(dlayer==1){dlayer_mapped=12;}
-		if     ((layer1_ind==2 && dlayer==3)){dlayer_mapped=0;}
-		else if((layer1_ind==3 && dlayer==1 && (TMath::Abs(dy)>101))){dlayer_mapped=1;}
-		else if((layer1_ind==2 || layer1_ind==3) && (TMath::Abs(dy)>101) ){dlayer_mapped=2;}
-		else if(dlayer==3){dlayer_mapped=3;}
-		else if(dlayer==5){dlayer_mapped=4;}
-		else if(dlayer==7){dlayer_mapped=5;}
-		else if(dlayer==2){dlayer_mapped=6;}
-		else if(dlayer==4){dlayer_mapped=7;}
-		else if(dlayer==6){dlayer_mapped=8;}		
-		else if(dlayer==1){dlayer_mapped=8;}		
-
+		return (dx * dx + dy * dy + dz * dz) / (constants::c * constants::c) - dt * dt;
 		// return TMath::Abs((dx * dx + dy * dy + dz * dz) / (constants::c * constants::c) - dt * dt);
-		// return TMath::Abs(TMath::Sqrt((dx * dx + dy * dy + dz * dz))/dt - constants::c) + TMath::Abs(dlayer*300);
 		// return TMath::Abs(TMath::Sqrt((dx * dx + dy * dy + dz * dz))/dt/constants::c-1);
-		return TMath::Abs((dx * dx + dy * dy + dz * dz)/ (constants::c * constants::c)/(dt*dt) - 1)+ TMath::Abs(dlayer_mapped*100);
+		// return TMath::Abs((dx * dx + dy * dy + dz * dz)/ (constants::c * constants::c)/(dt*dt) - 1)+ TMath::Abs(dlayer_mapped*100);
 	} 
 
 	double c_score(const seed &s)
@@ -259,17 +226,39 @@ public:
 		//std::ofstream file;
 		//file.open("print.txt", std::ios_base::app);
 
-//		for (auto seed : seeds)
-//			seed.score = c_score(seed);
-
 		int i=0;
 		for (auto seed : seeds_k)
 		{
-			// auto P1 = seed.hits.first->PosVector();
-			// auto P2 = seed.hits.second->PosVector();
-			// double dr = (P2 - P1).Magnitude() / constants::c; // [ns]
-			// seeds_k[i].score = c_score(seed) / (dr * dr); // these will now be ordered by relative scores
-			seeds_k[i].score = c_score(seed); // these will now be ordered by relative scores
+			auto P1 = seed.hits.first->PosVector();
+			auto P2 = seed.hits.second->PosVector();
+			double dr = (P2 - P1).Magnitude() / constants::c; // [ns]
+			seeds_k[i].score = c_score(seed) / (dr * dr); // these will now be ordered by relative scores
+			// seeds_k[i].score = c_score(seed); 
+
+
+			// auto hit1 = seed.hits.first;
+			// auto hit2 = seed.hits.second;
+			// double dx = hit1->x - hit2->x;
+			// double dy = hit1->y - hit2->y;
+			// double dz = hit1->z - hit2->z;
+			// double dt = hit1->t - hit2->t;
+			// int layer1_ind = (hit1->det_id).layerIndex;
+			// int dlayer = TMath::Abs((hit1->det_id).layerIndex - (hit2->det_id).layerIndex);
+			// int dlayer_mapped=0;
+
+			// if     ((layer1_ind==2 && dlayer==3)){dlayer_mapped=0;}
+			// else if((layer1_ind==3 && dlayer==1 && (TMath::Abs(dy)>101))){dlayer_mapped=1;}
+			// else if((layer1_ind==2 || layer1_ind==3) && (TMath::Abs(dy)>101) ){dlayer_mapped=2;}
+			// else if(dlayer==1){dlayer_mapped=3;}	
+			// else if(dlayer==3){dlayer_mapped=4;}
+			// else if(dlayer==5){dlayer_mapped=5;}
+			// else if(dlayer==7){dlayer_mapped=6;}
+			// else if(dlayer==2){dlayer_mapped=7;}
+			// else if(dlayer==4){dlayer_mapped=8;}
+			// else {dlayer_mapped=9;}		
+			// std::cout<<c_score(seed)/(dt*dt)+ TMath::Abs(dlayer_mapped*100)<<std::endl;
+			// seeds_k[i].score = TMath::Abs((dx * dx + dy * dy + dz * dz)/ (constants::c * constants::c)/(dt*dt) - 1)+ dlayer_mapped*100.0;
+				
 
 			i++;
 		}

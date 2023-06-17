@@ -14,9 +14,9 @@
 # scint_efficiency (Prob. a floor / wall hit is dropped)
 # merge_cos_theta (-2 for NO merging - including implicit)
 # merge_distance
-# seed_closest_approach [cm]
+# vertex_seed_dist [cm]
 # vertex_chi2 (per ndof)
-# closest_approach_add [cm]
+# vertex_add_max_distance [cm]
 # kalman_vertex_chi_add (per ndof)
 # kalman_vertex_chi (per ndof)
 # kalman_v_add[0] (beta)

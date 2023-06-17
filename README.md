@@ -64,9 +64,9 @@ The parameters are explained in the table below:
 |scint_efficiency                | 0.001                    | |
 |merge_cos_theta             | -2.0                 | |
 |merge_distance              | 0.0                  | |
-|seed_closest_approach               | 300.0                    | |
+|vertex_seed_dist               | 300.0                    | |
 |vertex_chi2             | 15.0                 | |
-|closest_approach_add                | 150.0                    | |
+|vertex_add_max_distance                | 150.0                    | |
 |kalman_vertex_chi_add               | 100000.0                 | |
 |kalman_vertex_chi               | 100.0                    | |
 |kalman_v_add[0]                | 0.8                   | |

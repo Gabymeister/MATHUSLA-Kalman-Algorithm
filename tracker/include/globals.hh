@@ -152,9 +152,9 @@ namespace cuts{
 	const int cleaning_nhits = 6;
 
 	//vertexing
-        const double seed_closest_approach = 100.0*units::cm;
+        const double vertex_seed_dist = 100.0*units::cm;
         const double vertex_chi2 = 15.0;
-        const double closest_approach_add = 100.0*units::cm;
+        const double vertex_add_max_distance = 100.0*units::cm;
         const double kalman_vertex_chi_add = 100000.0;
         const double kalman_vertex_chi = 100.0;
 

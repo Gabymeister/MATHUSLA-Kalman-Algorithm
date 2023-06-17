@@ -18,12 +18,6 @@ void TrackFinder::Seed()
 {
 //	seeds.clear();
 //	seeds = {};
-/*
-	for (int first = 0; first < hits.size(); first++)
-	{
-		for (int second = first + 1; second < hits.size(); second++)
-		{
-*/
 	for (int first = 0; first < hits_k.size(); first++)
 	{
 		for (int second = first + 1; second < hits_k.size(); second++)
@@ -35,23 +29,30 @@ void TrackFinder::Seed()
 			if (layer1 == layer2)
 				continue;
 
+			if (TMath::Abs(layer1-layer2)<2)
+				continue;
+
 			double ds_2 = c_score(hits_k[first], hits_k[second]);
+			double ds_2_rel = ds_2/(hits_k[first]->t - hits_k[second]->t)/(hits_k[first]->t - hits_k[second]->t);
 
 			// std::cout << "Layer Index: " << layer1 <<", "<<layer2<<" c_score: "<< ds_2<< std::endl;
 
 
 			//double dr = (hits[first].PosVector() - hits[second].PosVector()).Magnitude() / constants::c; // [ns]
-
-			if (ds_2 > par_handler->par_map["seed_interval"])
+			if (TMath::Abs(ds_2) > (par_handler->par_map["seed_interval"]))
+				continue;
+			if (ds_2_rel>0.1 | ds_2_rel<-0.25)
 				continue;
 
 			//seeds.push_back(seed(hits[first], hits[second]));
 			seeds_k.push_back(seed(hits_k[first], hits_k[second]));
+			// seeds_k.back().score = TMath::Abs(ds_2_rel);
+			seeds_k.back().score = ds_2_rel;
 
 		} //"second" loop
 	}	  //"first" loop
 
-	score_seeds();
+	// score_seeds();
 
 } //TF::Seed
 
@@ -433,9 +434,7 @@ void TrackFinder::FindTracks_kalman()
 				Eigen::VectorXd v(3);
 				v << kft_.v_s_list[n][0], kft_.v_s_list[n][1], kft_.v_s_list[n][2];
 
-//				if (kft_.chi_s[n] > cuts::kalman_chi_s
-				//if (sts.chi_prob_eld(kft_.chi_s[n],ndof) > par_handler->par_map["kalman_pval_s"]
-//				if (kft_.chi_s[n] > par_handler->par_map["kalman_chi_s"]
+
 				if (ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) >= par_handler->par_map["kalman_pval_drop"]
 			           || !(par_handler->par_map["kalman_v_drop[0]"] < v.norm() / constants::c
 				   && v.norm() / constants::c < par_handler->par_map["kalman_v_drop[1]"]))
@@ -547,9 +546,11 @@ void TrackFinder::FindTracks_kalman()
 			chi_sum += chi;
 
 		//chi_sum = chi_sum / (4.0 * kft_2.chi_s.size() - 6.0); // always non_negative due to num_hit cut (if track can be passed)
-		chi_sum = chi_sum / ndof;
+		// chi_sum = chi_sum / ndof;
 
-		if (current_track->nlayers() >= cuts::track_nlayers && chi_sum < par_handler->par_map["kalman_track_chi"])
+		// if (current_track->nlayers() >= cuts::track_nlayers && chi_sum < par_handler->par_map["kalman_track_chi"])
+		// Cut on p-value instead of chi2/dof
+		if (current_track->nlayers() >= cuts::track_nlayers && (ROOT::Math::chisquared_cdf(chi_sum, ndof) <= par_handler->par_map["kalman_pval_track"]))
 		{
 			tracks_k.push_back(current_track);
 

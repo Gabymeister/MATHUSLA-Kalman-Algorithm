@@ -8,14 +8,19 @@
 class vertex_seed
 {
 public:
+	std::vector<double> seed_midpoint;
+	std::vector<double> seed_midpoint_err = {1.0,1.0,1.0,1.0};
+	double chi2;
+	double closest_dist;
+
 	double score() { 
 		// Previous score (2023.6.6)
 		// return tracks.first->closest_approach(tracks.second); 
 
 		// New score: distance [cm] - total_layers*100
-		auto score_distance = tracks.first->closest_approach(tracks.second);
-		float score_layers = -100.0* (tracks.first->chi_s.size()+tracks.second->chi_s.size());
-		return score_distance+score_layers;
+		// auto score_distance = tracks.first->closest_approach(tracks.second);
+		float score_layers = -50.0* (tracks.first->chi_s.size()+tracks.second->chi_s.size());
+		return closest_dist+score_layers;
 		}
 
 	std::pair<physics::track *, physics::track *> tracks;

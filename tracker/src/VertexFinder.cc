@@ -7,6 +7,8 @@
 #include "kalman-test.hh"
 #include <iostream>
 #include <fstream>
+#include <TMath.h>
+#include "Math/ProbFunc.h"
 
 #include <Eigen/Dense>
 
@@ -20,10 +22,33 @@ void VertexFinder::Seed_k_m()
 
 			auto tr1 = tracks_k_m[n1];
 			auto tr2 = tracks_k_m[n2];
+			auto closest_dist = tr1->closest_approach(tr2);
 
-			if (tr1->closest_approach(tr2) < par_handler->par_map["seed_closest_approach"])
+			if (closest_dist < par_handler->par_map["vertex_seed_dist"])
 			{
-				seeds_k_m.push_back(vertex_seed(tr1, tr2));
+
+				// Find chi2 and midpoint of the seed.
+				VertexFitter fitter_seed;
+				auto current_seed = vertex_seed(tr1, tr2);
+				current_seed.closest_dist = closest_dist;
+				current_seed.seed_midpoint = current_seed.guess();
+				std::vector<physics::track *> seed_tracks = {current_seed.tracks.first, current_seed.tracks.second};
+				auto status0 = fitter_seed.fit(seed_tracks, current_seed.seed_midpoint);
+				if (status0 == true) {
+					current_seed.seed_midpoint = fitter_seed.parameters;
+					current_seed.seed_midpoint_err = fitter_seed.parameter_errors;
+					current_seed.chi2 = fitter_seed._merit;
+					current_seed.closest_dist = current_seed.tracks.first->distance_to(Vector(current_seed.seed_midpoint[0],current_seed.seed_midpoint[1],current_seed.seed_midpoint[2]),current_seed.seed_midpoint[3]) + current_seed.tracks.second->distance_to(Vector(current_seed.seed_midpoint[0],current_seed.seed_midpoint[1],current_seed.seed_midpoint[2]),current_seed.seed_midpoint[3]);
+				}	
+
+
+				if(current_seed.closest_dist < par_handler->par_map["vertex_seed_dist"] && current_seed.chi2< par_handler->par_map["vertex_seed_chi2"]){
+					seeds_k_m.push_back(current_seed);
+					if(par_handler->par_map["debug_vertex"]==1)
+						std::cout <<"  seed chi2: "<<fitter_seed._merit<<"\t. Seed dist: "<<closest_dist << "\t,new dist "<< current_seed.closest_dist<< ".\t Layers: " << current_seed.tracks.first->chi_s.size()+current_seed.tracks.second->chi_s.size()<<std::endl;
+				}
+
+
 			}
 		} //n2
 	}	  //n1
@@ -42,28 +67,69 @@ void VertexFinder::FindVertices_k_m_hybrid()
 
 	while (seeds_k_m.size() > 0 and tracks_k_m.size() > 0)
 	{
+		auto current_seed = seeds_k_m[0];
+		seeds_k_m.erase(seeds_k_m.begin());
+		// Remove seeds with tracks that are already used in vertex
+		// First, get a list of ID of remaining tracks
+		std::vector <int> track_ids;
+		for (auto tk : tracks_k_m){
+			track_ids.push_back(tk->index);
+		}
+		// Then, see if the seed can be found in the remaining tracks
+		std::vector<int>::iterator find1, find2;
+		find1 = std::find(track_ids.begin(), track_ids.end(),current_seed.tracks.first->index);
+		find2 = std::find(track_ids.begin(), track_ids.end(),current_seed.tracks.second->index);
+		// Skip this seed, if either hit in the seeds is not found in the remaining hits:
+		if ((find1 == track_ids.end()) || (find2 == track_ids.end())){
+			continue;
+		}
 
 		std::vector<physics::track *> used_tracks = {};
 		std::vector<physics::track *> unused_tracks = {};
 
-		auto current_seed = seeds_k_m[0];
-		auto seed_midpoint = current_seed.guess();
+		// Find the best midpoint of the seed
+		if(par_handler->par_map["debug_vertex"]==1){
+			std::cout <<"  New seed--------------------"<<std::endl;
+			std::cout <<"   seed chi2: "<<current_seed.chi2<<std::endl;
+		}
+		auto seed_midpoint = current_seed.seed_midpoint;
 
-		seeds_k_m.erase(seeds_k_m.begin());
-
+		// Add tracks to the track list for fit
+		// First, add tracks from seed
+		used_tracks.push_back(current_seed.tracks.first);
+		used_tracks.push_back(current_seed.tracks.second);
+		// Then deal with the rest 
 		for (auto tr : tracks_k_m)
-		{
-			// if (current_seed.closest_approach(tr) < par_handler->par_map["closest_approach_add"]) // Tom: I think this is wrong. We should calculate the distance to the best guess of the seed, not the individual tracks in the seed. 
-			if (tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]) < par_handler->par_map["closest_approach_add"])
-			{
-				used_tracks.push_back(tr);
-			}
+		{	
+			if(par_handler->par_map["debug_vertex"]==1)
+				std::cout << "    track #"<<tr->index<<",\t" << tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]) << "[cm] to seed.";
+
 			// Special treatment for tracks in seed: add them directly even if they do not pass the distance cut.
-			else if (tr->index==current_seed.tracks.first->index || tr->index==current_seed.tracks.second->index){
-				used_tracks.push_back(tr);
+			if (tr->index==current_seed.tracks.first->index || tr->index==current_seed.tracks.second->index){
+				if(par_handler->par_map["debug_vertex"]==1)
+					std::cout <<"\t- added (seed)"<<std::endl;
+				// used_tracks.push_back(tr);
 			}
+			// if (current_seed.closest_approach(tr) < par_handler->par_map["vertex_add_max_distance"]) // Tom: I think this is wrong. We should calculate the distance to the best guess of the seed, not the individual tracks in the seed. 
+			else if (tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]) < par_handler->par_map["vertex_add_max_distance"])
+			{
+
+				// auto chi2_delta = tr->chi2_distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]);
+				auto chi2_delta = tr->chi2_distance_to_pointerror(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3], current_seed.seed_midpoint_err);
+				if (chi2_delta<par_handler->par_map["vertex_chi2_add"]){
+					if(par_handler->par_map["debug_vertex"]==1)
+						std::cout <<"\t- added, delta-Chi2: " <<chi2_delta<<std::endl;
+					used_tracks.push_back(tr);
+				}
+				else {
+					unused_tracks.push_back(tr);
+					if(par_handler->par_map["debug_vertex"]==1)
+						std::cout <<"\t  - dropped, delta-Chi2: " <<chi2_delta<<std::endl;
+				}
+			}			
 			else
 			{
+				if(par_handler->par_map["debug_vertex"]==1) std::cout<< std::endl;
 				unused_tracks.push_back(tr);
 			}
 		}
@@ -73,19 +139,44 @@ void VertexFinder::FindVertices_k_m_hybrid()
 			continue;
 		}
 
-		VertexFitter fitter;
-		auto status = fitter.fit(used_tracks, current_seed.guess());
 
-//		if (status == false or fitter.merit() > cuts::vertex_chi2)
-		if (status == false or fitter.merit() > par_handler->par_map["vertex_chi2"])
+		// Do the fit on all tracks added to the seed
+		VertexFitter fitter;
+		auto status = fitter.fit(used_tracks, seed_midpoint);
+		// Drop bad tracks
+		auto delta_chi2_list = fitter.delta_chi2();
+		for(int i=delta_chi2_list.size()-1; i>=0; i--){
+			if (delta_chi2_list[i]> par_handler->par_map["vertex_chi2_drop"]){
+				unused_tracks.push_back(used_tracks.at(i));
+				used_tracks.erase(used_tracks.begin()+i);
+				if(par_handler->par_map["debug_vertex"]==1)
+					std::cout<<"     -track #"<<unused_tracks.back()->index <<" dropped from fit with delta-Chi2 "<<delta_chi2_list[i] <<std::endl;
+			}
+		}
+		if (used_tracks.size()<2){
+			continue; // Skip, if there are not enough tracks
+		}
+		// Fit again
+		status = fitter.fit(used_tracks, seed_midpoint);
+
+		auto chi2_sum = fitter._merit;
+		auto chi2_dof = fitter.ndof;
+		// if (status == false or (ROOT::Math::chisquared_cdf(chi2_sum, chi2_dof) >= par_handler->par_map["vertex_chi2_final_pval"]))
+		if (status == false or chi2_sum/chi2_dof >= par_handler->par_map["vertex_chi2_final"])
 		{
 			if (status == false)
 				noConverge += 1;
-//			if (fitter.merit() > cuts::vertex_chi2)
-			if (fitter.merit() > par_handler->par_map["vertex_chi2"])
+			else{
+				if(par_handler->par_map["debug_vertex"]==1)
+					std::cout <<"   FAILED, rejected by chi2 cut. Track chi2/dof: "<<chi2_sum << "/" << chi2_dof <<std::endl;
 				missedChi2 += 1;
+			}
 			continue;
 		}
+
+		if(par_handler->par_map["debug_vertex"]==1)
+			std::cout <<"   ** SUCCEED. Vertex #"<<vertices_k_m.size() <<" found with "<< used_tracks.size()<<" tracks"<<std::endl;
+		
 
 		double cos_opening_angle = -1.0;
 		if (used_tracks.size() == 2)

@@ -182,7 +182,8 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
   physics::digi_hit *y;
   y = y_list[hit_inds[0]];
 
-  y = merge_enery_sharing(y_list, hit_inds);
+  // Merge the adjacent hits with energy sharing
+  // y = merge_enery_sharing(y_list, hit_inds);
 
   // remove adjacent hits
   // ** This function was actually turned off, but kept here for its other purpose of logging unused hits.
@@ -360,9 +361,6 @@ double KalmanFilter::smooth_gain(const physics::digi_hit *y, int k)
   ndof = ndof > 1.0 ? 3.0 * ndof - 6.0 : 1.0;
 
   if (dropping
-//     && (chi_plus_s > cuts::kalman_chi_s
-//     || !(cuts::kalman_v_drop[0] < v.norm() / constants::c && v.norm() / constants::c < cuts::kalman_v_drop[1])))
-//     && (chi_plus_s > par_handler->par_map["kalman_chi_s"]
      && (ROOT::Math::chisquared_cdf(chi_plus_s, ndof) >= par_handler->par_map["kalman_pval_drop"]
      || !(par_handler->par_map["kalman_v_drop[0]"] < v.norm() / constants::c && v.norm() / constants::c < par_handler->par_map["kalman_v_drop[1]"])))
   {
