@@ -19,7 +19,7 @@ public:
 
 		// New score: distance [cm] - total_layers*100
 		// auto score_distance = tracks.first->closest_approach(tracks.second);
-		float score_layers = -50.0* (tracks.first->chi_s.size()+tracks.second->chi_s.size());
+		float score_layers = -100.0* (tracks.first->chi_s.size()+tracks.second->chi_s.size());
 		return closest_dist+score_layers;
 		}
 

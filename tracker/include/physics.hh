@@ -150,6 +150,7 @@ namespace physics{
 		double x0, y0, z0;
 		double ex0, ey0, ez0;
 		double t0, et0;
+        double distance; //distance to vertex
 	        int first_layer;
 		std::vector<int> hits_to_drop = {};
 		//std::vector<int> _holes;

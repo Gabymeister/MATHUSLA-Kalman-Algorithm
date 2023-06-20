@@ -1,13 +1,13 @@
 branch 0.0
 debug 0.0
-debug_vertex 1.0
+debug_vertex 0.0
 seed 1.0
 p 500.0
 
 seed_interval 250.0
 kalman_chi_add 11.0
-kalman_pval_drop 0.97
-kalman_pval_track 0.98
+kalman_pval_drop 0.98
+kalman_pval_track 0.99
 
 
 scint_efficiency 0.001
@@ -15,10 +15,10 @@ merge_cos_theta -2.0
 merge_distance 0.0
 
 vertex_seed_dist 400.0
-vertex_seed_chi2 100
-vertex_add_max_distance 250.0
-vertex_chi2_add 200.0
-vertex_chi2_drop 150.0
+vertex_seed_chi2 250
+vertex_add_max_distance 500.0
+vertex_chi2_add 250.0
+vertex_chi2_drop 200.0
 vertex_chi2_final 50
 vertex_chi2_final_pval 0.998
 
@@ -31,5 +31,5 @@ kalman_v_drop[0] -9999
 kalman_v_drop[1] 9999
 
 start_ev 0.0
-end_ev 15.0
+end_ev 40000.0
 noise_hz 0.0

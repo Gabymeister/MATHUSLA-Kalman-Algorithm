@@ -147,7 +147,9 @@ public:
 		return delta_chi2_list;
 	}
 
-	bool fit(std::vector<physics::track *> _track_list, std::vector<double> arg_guess = {})
+
+	// Fit, with adjustable tolerance. IMINUIT DOC: The default tolerance is 0.1, and the minimization will stop when the estimated vertical distance to the minimum (EDM) is less than 0.001*[tolerance]*UP
+	bool fit(std::vector<physics::track *> _track_list, std::vector<double> arg_guess = {}, double tolerance=0.1)
 	{
 
 		track_list = _track_list;
@@ -167,7 +169,7 @@ public:
 
 		double first_step_size = 0.010;
 		auto maxcalls = 500000.0;
-		auto tolerance = 0.1;
+		// auto tolerance = 0.1;
 		double arglist[2];
 		arglist[0] = maxcalls;
 		arglist[1] = tolerance;
