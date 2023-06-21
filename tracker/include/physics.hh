@@ -106,6 +106,7 @@ namespace physics{
 	public:
 		double x, y, z, t;
 		std::vector<int> track_indices;
+        std::vector<double> delta_chi2_list; // List of chi2 contribution of each track
 	        TMatrixD _CovMatrix;
         	TMatrixD CovMatrix(){return _CovMatrix;}
 
@@ -151,6 +152,7 @@ namespace physics{
 		double ex0, ey0, ez0;
 		double t0, et0;
         double distance; //distance to vertex
+        double distance_weighted; //error-weighted distance to vertex
 	        int first_layer;
 		std::vector<int> hits_to_drop = {};
 		//std::vector<int> _holes;

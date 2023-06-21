@@ -53,8 +53,26 @@ void VertexFinder::Seed_k_m()
 		} //n2
 	}	  //n1
 
+
+	for (int i1 = 0; i1 < seeds_k_m.size(); i1++){
+		auto sd = seeds_k_m[i1];
+		for (int n1 = 0; n1 < tracks_k_m.size(); n1++){
+			auto tr1 = tracks_k_m[n1];
+			auto dist = tr1->distance_to(Vector(sd.seed_midpoint[0],sd.seed_midpoint[1],sd.seed_midpoint[2]),sd.seed_midpoint[3]);
+			if (dist< par_handler->par_map["vertex_add_max_distance"])
+				sd.compatible_tracks+=1;
+		}
+		seeds_k_m[i1] = sd;
+	}
+
 	std::sort(seeds_k_m.begin(), seeds_k_m.end(), [](vertex_seed a, vertex_seed b) -> bool
 			  { return a.score() < b.score(); });
+
+	if(par_handler->par_map["debug_vertex"]==1){
+		for (auto sd:seeds_k_m)
+			std::cout <<"  seed chi2: "<<sd.chi2<<".\t Seed dist: "<<sd.closest_dist << ",\t N tracks "<< sd.compatible_tracks<< ".\t Layers: " << sd.tracks.first->chi_s.size()+sd.tracks.second->chi_s.size()<<std::endl;
+	}			  
+
 } //VF:Seed
 
 void VertexFinder::FindVertices_k_m_hybrid()
@@ -93,6 +111,7 @@ void VertexFinder::FindVertices_k_m_hybrid()
 			std::cout <<"   seed chi2: "<<current_seed.chi2<<std::endl;
 		}
 		auto seed_midpoint = current_seed.seed_midpoint;
+		auto parameter_errors = current_seed.seed_midpoint_err;
 		auto chi2_current = current_seed.chi2;
 		VertexFitter fitter_find;		
 
@@ -112,25 +131,28 @@ void VertexFinder::FindVertices_k_m_hybrid()
 		auto ntracks = tracks_k_m.size();
 		for (auto itrack=0; itrack<ntracks; itrack++)
 		{	
-
 			// sort tracks by distance to seed_midpoint. This is inside the for loop to keep it updated with changing seed_midpoint
-			for (auto tr_temp : tracks_k_m)
-				tr_temp->distance = tr_temp->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]);
+			for (auto tr_temp : tracks_k_m){
+				// tr_temp->distance = tr_temp->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]);
+				tr_temp->distance_weighted = tr_temp->chi2_distance_to_pointerror(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3], parameter_errors);
+			}
 			std::sort(tracks_k_m.begin(), tracks_k_m.end(), [](physics::track* a, physics::track* b) -> bool
-				{ return a->distance < b->distance; });
-
+				{ return a->distance_weighted < b->distance_weighted; });
 			auto tr = tracks_k_m.front();
+			tr->distance = tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]);
 
 			if(par_handler->par_map["debug_vertex"]==1)
-				std::cout << "    track #"<<tr->index<<",\t" << tr->distance << "[cm] to seed.";
+				// std::cout << "                   -parameters now: " << seed_midpoint[0] << ", " << seed_midpoint[1] << ", " << seed_midpoint[2] << ", " << seed_midpoint[3] << std::endl;
+				std::cout << "    track #"<<tr->index<<",\t" << tr->distance_weighted << " [sigma] " <<  tr->distance << " [cm] to estimated vertex.";
 
 			// Special treatment for tracks in seed: add them directly even if they do not pass the distance cut.
 			if (tr->index==current_seed.tracks.first->index || tr->index==current_seed.tracks.second->index){
 				if(par_handler->par_map["debug_vertex"]==1)
 					std::cout <<"\t- added (seed)"<<std::endl;
 			}
+			// Add the track to pool if distance is below threshold
 			// if (current_seed.closest_approach(tr) < par_handler->par_map["vertex_add_max_distance"]) // Tom: I think this is wrong. We should calculate the distance to the best guess of the seed, not the individual tracks in the seed. 
-			else if (tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]) < par_handler->par_map["vertex_add_max_distance"])
+			else if (tr->distance < par_handler->par_map["vertex_add_max_distance"])
 			{
 
 				// auto chi2_delta = tr->chi2_distance_to_pointerror(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3], current_seed.seed_midpoint_err);
@@ -164,6 +186,7 @@ void VertexFinder::FindVertices_k_m_hybrid()
 				// Else, update the new midpoint and chi2
 				else{
 					seed_midpoint = fitter_find.parameters;
+					parameter_errors = fitter_find.parameter_errors;
 					chi2_current = fitter_find._merit;
 					if (par_handler->par_map["debug_vertex"]==1)
 						std::cout <<"\t- added, delta-Chi2: " <<chi2_delta<<std::endl;
@@ -178,43 +201,89 @@ void VertexFinder::FindVertices_k_m_hybrid()
 			tracks_k_m.erase(tracks_k_m.begin());
 		}
 
-		if (used_tracks.size() < 2){
-			failedSeed+=1;
-			continue;
-		}
-
-
 		// Do the fit on all tracks added to the seed
+		VertexFitter::adaptive_iterations = par_handler->par_map["vertex_adaptive_niters"];
+		VertexFitter::adaptive_annealing_factor = par_handler->par_map["vertex_adaptive_r"];
+		VertexFitter::adaptive_temperature = par_handler->par_map["vertex_adaptive_T0"];
+		VertexFitter::adaptive_chi2_cutoff = par_handler->par_map["vertex_adaptive_chi2"];		
 		VertexFitter fitter;
-		auto status = fitter.fit(used_tracks, seed_midpoint);
-		// Drop bad tracks
+
+		auto status = fitter.fit(used_tracks, seed_midpoint, 1.0);
 		auto delta_chi2_list = fitter.delta_chi2();
-		for(int i=delta_chi2_list.size()-1; i>=0; i--){
-			if (delta_chi2_list[i]> par_handler->par_map["vertex_chi2_drop"]){
-				unused_tracks.push_back(used_tracks.at(i));
-				used_tracks.erase(used_tracks.begin()+i);
+		if(par_handler->par_map["debug_vertex"]==1)
+			std::cout <<"    -parameters before dropping: " << seed_midpoint[0] << ", " << seed_midpoint[1] << ", " << seed_midpoint[2] << ", " << seed_midpoint[3] << std::endl;
+
+		// Drop bad tracks iteratively (if using the normal chi2 fit)
+		if (par_handler->par_map["vertex_use_adaptive_fit"]==0)
+		{
+
+			// for(int i=delta_chi2_list.size()-1; i>=0; i--){
+			// 	if (delta_chi2_list[i]> par_handler->par_map["vertex_chi2_drop"]){
+			// 		unused_tracks.push_back(used_tracks.at(i));
+			// 		used_tracks.erase(used_tracks.begin()+i);
+			// 		if(par_handler->par_map["debug_vertex"]==1)
+			// 			std::cout<<"     -track #"<<unused_tracks.back()->index <<" dropped from fit with delta-Chi2 "<<delta_chi2_list[i] <<std::endl;
+			// 	}
+			// }
+
+			// Drop one bad tracks each time
+			auto max_chi2 = max_element(delta_chi2_list.begin(), delta_chi2_list.end());
+			while (*max_chi2> par_handler->par_map["vertex_chi2_drop"]){
+				auto i_track_max_chi2 = max_chi2 - delta_chi2_list.begin();
+				unused_tracks.push_back(used_tracks.at(i_track_max_chi2));
+				used_tracks.erase(used_tracks.begin()+i_track_max_chi2);	
 				if(par_handler->par_map["debug_vertex"]==1)
-					std::cout<<"     -track #"<<unused_tracks.back()->index <<" dropped from fit with delta-Chi2 "<<delta_chi2_list[i] <<std::endl;
+					std::cout<<"     -track #"<<unused_tracks.back()->index <<" dropped from fit with delta-Chi2 "<<*max_chi2<<std::endl;
+
+				// Fit again
+				auto status = fitter.fit(used_tracks, seed_midpoint, 1.0);	
+				delta_chi2_list = fitter.delta_chi2();
+				max_chi2 = max_element(delta_chi2_list.begin(), delta_chi2_list.end());	
+				seed_midpoint = fitter.parameters;
+				if(par_handler->par_map["debug_vertex"]==1)
+					std::cout <<"    -parameters updated: " << seed_midpoint[0] << ", " << seed_midpoint[1] << ", " << seed_midpoint[2] << ", " << seed_midpoint[3] << std::endl;
+
 			}
+
+
+			if (used_tracks.size()<2){
+				for (auto track : used_tracks)
+					unused_tracks.push_back(track);
+				tracks_k_m = unused_tracks;
+				if(par_handler->par_map["debug_vertex"]==1) std::cout <<"   FAILED (no enough tracks) "<<std::endl;
+				continue; // Skip, if there are not enough tracks
+			}
+
+			// Fit again
+			status = fitter.fit(used_tracks, seed_midpoint, 0.1);
+
 		}
-		if (used_tracks.size()<2){
-			continue; // Skip, if there are not enough tracks
+		else{
+			status = fitter.fit_adaptive(used_tracks, seed_midpoint);
 		}
-		// Fit again
-		status = fitter.fit(used_tracks, seed_midpoint);
+		delta_chi2_list = fitter.delta_chi2();
+
+		
+
 
 		auto chi2_sum = fitter._merit;
 		auto chi2_dof = fitter.ndof;
 		// if (status == false or (ROOT::Math::chisquared_cdf(chi2_sum, chi2_dof) >= par_handler->par_map["vertex_chi2_final_pval"]))
 		if (status == false or chi2_sum/chi2_dof >= par_handler->par_map["vertex_chi2_final"])
 		{
-			if (status == false)
+			if (status == false){
+				if(par_handler->par_map["debug_vertex"]==1)
+					std::cout <<"   FAILED (fit did not converge) "<<std::endl;
 				noConverge += 1;
+			}
 			else{
 				if(par_handler->par_map["debug_vertex"]==1)
-					std::cout <<"   FAILED, rejected by chi2 cut. Track chi2/dof: "<<chi2_sum << "/" << chi2_dof <<std::endl;
+					std::cout <<"   FAILED (rejected by chi2 cut). Track chi2/dof: "<<chi2_sum << "/" << chi2_dof << " = " << chi2_sum/chi2_dof <<std::endl;
 				missedChi2 += 1;
 			}
+			for (auto track : used_tracks)
+				unused_tracks.push_back(track);
+			tracks_k_m = unused_tracks;			
 			continue;
 		}
 
@@ -242,6 +311,7 @@ void VertexFinder::FindVertices_k_m_hybrid()
 
 		good_vertex->CovMatrix(fitter.cov_matrix, fitter.npar);
 		good_vertex->merit(fitter.merit());
+		good_vertex->delta_chi2_list = delta_chi2_list;
 		vertices_k_m.push_back(good_vertex);
 		tracks_k_m = unused_tracks;
 	}
@@ -358,11 +428,17 @@ std::vector<double> VertexFitter::parameter_errors = {};
 double VertexFitter::_merit = 0.;
 double VertexFitter::cov_matrix[VertexFitter::npar][VertexFitter::npar];
 
+int VertexFitter::adaptive_iterations = 10;
+double VertexFitter::adaptive_annealing_factor = 0.8;
+double VertexFitter::adaptive_temperature = 3;
+double VertexFitter::adaptive_chi2_cutoff = 60;
+
+
 bool VertexFitter::bad_fit = false;
 void VertexFitter::nll(int &npar, double *gin, double &f, double *pars, int iflag)
 {
-	std::ofstream file;
-	file.open("print.txt", std::ios_base::app);
+	// std::ofstream file;
+	// file.open("print.txt", std::ios_base::app);
 
 	using Vector = vector::Vector;
 	double _x = pars[0];
@@ -401,5 +477,46 @@ void VertexFitter::nll(int &npar, double *gin, double &f, double *pars, int ifla
 		}
 	}
 
+	f = error;
+}
+
+void VertexFitter::cost_adaptive(int &npar, double *gin, double &f, double *pars, int iflag)
+{
+// Adaptive cost funtion that deweight outliers.
+
+	// std::ofstream file;
+	// file.open("print.txt", std::ios_base::app);
+
+	using Vector = vector::Vector;
+	double _x = pars[0];
+	double _y = pars[1];
+	double _z = pars[2];
+	double _t = pars[3];
+
+	double error = 0.0;
+	// ndof = 0;
+
+	for (auto track : VertexFitter::track_list)
+	{
+		// -- Use weighted chi2
+		auto delta_chi2 = track->chi2_distance_to(Vector(_x, _y, _z), _t);
+		auto weight_i = calc_adaptive_weight(delta_chi2);
+
+		// add to total chi2
+		error += delta_chi2*weight_i;
+
+		// add to DOF
+		// ndof += 3*weight_i;
+
+		if (isnan(error))
+		{
+			bad_fit = true;
+			//std::cout << " Bad Vertex fit! " << std::endl;
+			//std::cout << dist << " " << err << std::endl;
+			// track->CovMatrix().Print();
+			return;
+		}
+	}
+	// ndof = ndof - 4;
 	f = error;
 }

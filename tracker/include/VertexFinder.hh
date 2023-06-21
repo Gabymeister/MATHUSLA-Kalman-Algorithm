@@ -12,6 +12,7 @@ public:
 	std::vector<double> seed_midpoint_err = {1.0,1.0,1.0,1.0};
 	double chi2;
 	double closest_dist;
+	double compatible_tracks; // Tom: add a counter for compatible tracks
 
 	double score() { 
 		// Previous score (2023.6.6)
@@ -20,7 +21,7 @@ public:
 		// New score: distance [cm] - total_layers*100
 		// auto score_distance = tracks.first->closest_approach(tracks.second);
 		float score_layers = -100.0* (tracks.first->chi_s.size()+tracks.second->chi_s.size());
-		return closest_dist+score_layers;
+		return closest_dist + score_layers + chi2*10.0 - compatible_tracks*20.0;
 		}
 
 	std::pair<physics::track *, physics::track *> tracks;

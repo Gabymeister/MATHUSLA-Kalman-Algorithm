@@ -243,7 +243,8 @@ public:
       	OutputTree->Branch("Vertex_k_m_ErrorX", &vertex_x_k_m_error);
       	OutputTree->Branch("Vertex_k_m_ErrorY", &vertex_y_k_m_error);
       	OutputTree->Branch("Vertex_k_m_ErrorZ", &vertex_z_k_m_error);
-	OutputTree->Branch("vertex_k_m_chi2", &vertex_k_m_chi2_per_dof);
+		OutputTree->Branch("Vertex_k_m_chi2", &vertex_k_m_chi2_per_dof);
+		OutputTree->Branch("Vertex_k_m_chi2_track", &vertex_k_m_chi2_each_track);
         OutputTree->Branch("Vertex_k_m_trackIndices", &vertex_track_k_m_indices);
 	OutputTree->Branch("NumVertices_k_m", &numvertices_k_m, "NumVertices/D");
 
@@ -391,6 +392,7 @@ public:
   	std::vector<double> vertex_y_k_m_error;
   	std::vector<double> vertex_z_k_m_error;
 	std::vector<double> vertex_k_m_chi2_per_dof;
+	std::vector<double> vertex_k_m_chi2_each_track;
 	std::vector<double>	vertex_track_k_m_indices;
 	Double_t numvertices_k_m;
 
@@ -748,6 +750,7 @@ void TreeHandler::ExportVertices_k_m(std::vector<vertex*> vertices){
 	vertex_y_k_m_error.clear();
 	vertex_z_k_m_error.clear();
 	vertex_k_m_chi2_per_dof.clear();
+	vertex_k_m_chi2_each_track.clear();
 	numvertices_k_m = vertices.size();
 
 	for (auto v : vertices) {
@@ -770,6 +773,10 @@ void TreeHandler::ExportVertices_k_m(std::vector<vertex*> vertices){
 
 
 		vertex_k_m_chi2_per_dof.push_back(v->merit());
+		for (auto chi2: v->delta_chi2_list)
+			vertex_k_m_chi2_each_track.push_back(chi2);
+		vertex_k_m_chi2_each_track.push_back(-1);
+
 
 		for (auto q_f : v->q_f) vertex_k_f_beta.push_back(q_f.norm() / constants::c);
 		vertex_k_f_beta.push_back(-1.0);
