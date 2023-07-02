@@ -134,8 +134,15 @@ public:
 //		tracks.clear();
 
 		seeds_k.clear();
-		for (auto hit : hits_k)
-			delete hit;
+
+		// for (auto hit : hits_k){
+		// 	std::cout<<hit->index<<std::endl;
+		// }	
+		for (auto hit : hits_k){
+			if(hit != NULL){
+				delete hit;
+			}
+		}
 		// already taken care of by hits delete statement
 
 		hits_k.clear();
@@ -194,7 +201,7 @@ public:
 		}
 		if (!seed_hit_in)
 		{
-			file << "seed's first hit was already used by another track!!!!" << '\n';
+			// file << "seed's first hit was already used by another track!!!!" << '\n';
 		}
 		//file.close();
 		return seed_hit_in;

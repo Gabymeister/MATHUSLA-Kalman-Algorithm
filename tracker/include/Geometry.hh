@@ -126,15 +126,6 @@ public:
 			return {};
 		}
 
-		// double x_local = x_width*(static_cast<double>(id.xIndex) + 0.5);
-		// double z_local = z_width*(static_cast<double>(id.zIndex) + 0.5);
-
-		// if (id.layerIndex == 0) {
-		// 	return {cx + x_local, cy_0, cz + z_local};
-		// } else if (id.layerIndex == 1){
-		// 	return {cx + x_local, cy_1, cz + z_local};
-		// } 
-
 		double x_local;
 		double z_local;
 		if (id.layerIndex == 0) // First (Leftmost) wall

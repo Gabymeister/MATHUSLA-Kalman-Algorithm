@@ -148,7 +148,7 @@ public:
  		InputTree->SetBranchStatus("COSMIC_GEN_MUON_COUNT", 0);
  		InputTree->SetBranchStatus("COSMIC_GEN_HADRON_COUNT", 0);
  		InputTree->SetBranchStatus("COSMIC_GEN_PRIMARY_ID", 0);
- 		InputTree->SetBranchAddress("G4KLong_code", &G4KLong_code);
+ 		// InputTree->SetBranchAddress("G4KLong_code", &G4KLong_code);
  		InputTree->SetBranchAddress("EXTRA_12", &sim_EXTRA_12);
  		InputTree->SetBranchAddress("EXTRA_13", &sim_EXTRA_13);
  		InputTree->SetBranchAddress("EXTRA_14", &sim_EXTRA_14);
@@ -223,7 +223,7 @@ public:
  //		OutputTree->Branch("COSMIC_GEN_MUON_COUNT", "std::vector<double>", sim_COSMIC_GEN_MUON_COUNT);
  //		OutputTree->Branch("COSMIC_GEN_HADRON_COUNT", "std::vector<double>", sim_COSMIC_GEN_HADRON_COUNT);
  //		OutputTree->Branch("COSMIC_GEN_PRIMARY_ID", "std::vector<double>", sim_COSMIC_GEN_PRIMARY_ID);
- 		OutputTree->Branch("G4KLong_code", &G4KLong_code);
+ 		// OutputTree->Branch("G4KLong_code", &G4KLong_code);
  		OutputTree->Branch("EXTRA_12", "std::vector<double>", sim_EXTRA_12);
  		OutputTree->Branch("EXTRA_13", "std::vector<double>", sim_EXTRA_13);
  		OutputTree->Branch("EXTRA_14", "std::vector<double>", sim_EXTRA_14);

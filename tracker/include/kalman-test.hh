@@ -51,58 +51,70 @@ public:
 
   void kalman_all(std::vector<physics::digi_hit *> trackhits, seed *current_seed);
 
+  // void layer_sort(std::vector<physics::digi_hit *> digis)
+  // {
+  // //  std::ofstream file;
+  //   //file.open("print.txt", std::ios_base::app);
+
+  //   std::vector<std::vector<physics::digi_hit *>> layer_list(2 * detector::n_layers);
+
+  //   std::vector<double> height_list(detector::n_layers);
+  //   for (int i=0; i < detector::n_layers; i++) height_list[i] = (detector::LAYERS_Y[i][0] + detector::LAYERS_Y[i][1]) / 2;
+
+  //   // make a map from y to the index of the layer
+  //   std::map<double, int> y_to_inds;
+  //   for (int i = 0; i < detector::n_layers; i++)
+  //     y_to_inds[height_list[i]] = 2 * i; // just did this !!!!
+
+  //   // sort floor AND wall hits by y interval
+  //   for (auto hit : digis)
+  //   {
+  //     for (int i = 0; i < detector::n_layers; i++) {
+  //       if (height_list[i] == hit->y) {
+  //         layer_list[(int)(2 * i)].push_back(hit);
+  //         break;
+  //       }
+  //       else if (height_list[i] < hit->y && hit->y < height_list[i+1]) {
+  //         layer_list[(int)(2 * i + 1)].push_back(hit);
+  //         break;
+  //       }
+  //     }
+  //   }
+  //   layer_hits = layer_list;
+
+  //   // get indices of layers with hits
+  //   // * layer: a list of layer indices that is non-empty
+  //   // * det_ind_to_layers: indices of 'layer'
+  //   for (int i = 0; i < layer_hits.size(); i++)
+  //   {
+  //     if (layer_hits[i].size() != 0)
+  //       layers.push_back(i);
+  //   }
+  //   for (int i = 0; i < layers.size(); i++)
+  //     det_ind_to_layers[layers[i]] = i;
+  // }
+
   void layer_sort(std::vector<physics::digi_hit *> digis)
   {
-  //  std::ofstream file;
-    //file.open("print.txt", std::ios_base::app);
 
-//    std::vector<std::vector<physics::digi_hit *>> layer_list(9);
-    std::vector<std::vector<physics::digi_hit *>> layer_list(2 * detector::n_layers);
+    std::vector<std::vector<physics::digi_hit *>> layer_list(23);
 
-//    std::vector<double> height_list(9);
-//    height_list = {6002.5, 6105.5, 8002.5, 8105.5, 8502.5, 8605.5, 8708.5, 8811.5, 8914.5};
-
-    std::vector<double> height_list(detector::n_layers);
-    for (int i=0; i < detector::n_layers; i++) height_list[i] = (detector::LAYERS_Y[i][0] + detector::LAYERS_Y[i][1]) / 2;
-
-//    std::map<double, int> y_to_inds;
-//    for (int i = 0; i < 9; i++)
-//      y_to_inds[height_list[i]] = i;
-
-    // make a map from y to the index of the layer
-    std::map<double, int> y_to_inds;
-    for (int i = 0; i < detector::n_layers; i++)
-      y_to_inds[height_list[i]] = 2 * i; // just did this !!!!
-
-//    for (auto hit : digis)
-//    {
-//      layer_list[y_to_inds[hit->y]].push_back(hit);
-
-    // sort floor AND wall hits by y interval
     for (auto hit : digis)
-    {
-      for (int i = 0; i < detector::n_layers; i++) {
-        if (height_list[i] == hit->y) {
-          layer_list[(int)(2 * i)].push_back(hit);
-          break;
-        }
-	else if (height_list[i] < hit->y && hit->y < height_list[i+1]) {
-          layer_list[(int)(2 * i + 1)].push_back(hit);
-          break;
-        }
-      }
-    }
-    layer_hits = layer_list;
-    /*
-    for (int i = 0; i < layer_list.size(); i++)
-    {
+    {   
+      layer_list[hit->det_id.layerIndex].push_back(hit);
 
-      file << " hit list " << i << " is : ";
-      for (auto hit : layer_list[i])
-        file << hit->index << " , ";
-      file << std::endl;
+      // // Tracker layers
+      // if (hit->det_id.layerIndex<detector::n_layers) {
+      //   layer_list[(int) (hit->det_id.layerIndex)].push_back(hit);
+      // }
+      // // Wall layers (layerIndex=20,21)
+      // else if (hit->det_id.layerIndex >=20){
+      //   layer_list[hit->det_id.layerIndex-10].push_back(hit);
+      // }
     }
-    */
+
+    layer_hits = layer_list;
+
     // get indices of layers with hits
     for (int i = 0; i < layer_hits.size(); i++)
     {
@@ -112,8 +124,7 @@ public:
     for (int i = 0; i < layers.size(); i++)
       det_ind_to_layers[layers[i]] = i;
 
-    //file.close();
-  }
+  }  
 
   void init_first_state();
   void init_matrices(seed *current_seed);
@@ -191,7 +202,7 @@ private:
     first_hit_list = {first_hit};
 
     // layer of first hit (times two to account for spaces between layers)
-    seed_layer = (first_hit->det_id).layerIndex * 2;
+    seed_layer = (first_hit->det_id).layerIndex;
     //file << "Seed layer is " << seed_layer << std::endl;
 
     seedguess = current_seed->guess();
@@ -292,29 +303,25 @@ private:
     added_hits = kf.added_hits;
     unadded_hits = kf.unadded_hits;
 
-    //std::cout << "kalman unadded_hits len 1: " << unadded_hits.size() << std::endl;
+			// std::cout<<"kf.unadded (round1)"<<std::endl;
+			// for (auto hit: unadded_hits) std::cout<<hit->index<<std::endl;    
+			// std::cout<<"kf_find.unadded (round1)"<<std::endl;
+			// for (auto hit: kf_find.unadded_hits) std::cout<<hit->index<<std::endl;          
+			// std::cout<<"kf_find_bottomlayer.unadded (round1)"<<std::endl;
 
+
+    // Dropping round 2 (hits that are dropped during backward finding)
     if (finding) unadded_hits.insert(unadded_hits.end(), kf_find.unadded_hits.begin(), kf_find.unadded_hits.end());
 
-  //  std::cout << "kalman unadded_hits len 2: " << unadded_hits.size() << std::endl;
-
+    // Dropping round 3 (other hits that are on the seed layer)
     for (auto hit : layer_hits[filter_start_layer])
     {
       if (hit->index != lowest_hit->index)
       {
         unadded_hits.push_back(hit);
+        // std::cout<<hit->index<<std::endl;        
       }
     }
-/*
-    for (int i = 0; i < det_ind_to_layers[filter_start_layer]; i++)
-    {
-      for (auto hit : layer_hits[layers[i]])
-      {
-        unadded_hits.push_back(hit);
-      }
-    }
-*/
-//    std::cout << "kalman unadded_hits len 3: " << unadded_hits.size() << std::endl;
 
 //    file.close();
   }

@@ -28,8 +28,13 @@ void TrackFinder::Seed()
 
 			if (layer1 == layer2)
 				continue;
+				
+			// Excluding wall hits
+			if (layer1>detector::n_layers || layer2>detector::n_layers )
+				continue;
 
-			if (TMath::Abs(layer1-layer2)<2)
+			// Bypass seeds pairs that are within 3 layers
+			if (TMath::Abs(hits_k[first]->y-hits_k[second]->y)<210)
 				continue;
 
 			double ds_2 = c_score(hits_k[first], hits_k[second]);
@@ -44,8 +49,14 @@ void TrackFinder::Seed()
 			if (ds_2_rel>0.1 | ds_2_rel<-0.25)
 				continue;
 
-			//seeds.push_back(seed(hits[first], hits[second]));
-			seeds_k.push_back(seed(hits_k[first], hits_k[second]));
+
+			// Arrange the seed so that the first hit comes first in time
+			if (hits_k[first]->t < hits_k[second]->t)
+				seeds_k.push_back(seed(hits_k[first], hits_k[second]));
+			else
+				seeds_k.push_back(seed(hits_k[second], hits_k[first]));
+
+
 			// seeds_k.back().score = TMath::Abs(ds_2_rel);
 			seeds_k.back().score = ds_2_rel;
 
@@ -341,7 +352,9 @@ void TrackFinder::FindTracks_kalman()
 
 		seeds_k.erase(seeds_k.begin() + min_index); //delete the seed so that it isn't used again
 
-		if (par_handler->par_map["debug"] == 1) std::cout << "New Seed ---------" << std::endl;
+		if (par_handler->par_map["debug"] == 1){
+			std::cout << "New Seed ---------" <<current_seed.hits.first->index << ", " << current_seed.hits.second->index<< std::endl;
+		}
 
 		// check if the first seed hit is in the hit pool
 		bool used = !seed_unused(current_seed); // double negative! used = not unused
@@ -378,6 +391,13 @@ void TrackFinder::FindTracks_kalman()
 		undropped_hits = kf_find.found_hits;
 		unused_hits = kf_find.unadded_hits;
 
+		if (par_handler->par_map["debug"] == 1){ 		
+			std::cout<<"Dropped (round1)"<<std::endl;
+			for (auto hit: unused_hits) std::cout<<hit->index<<std::endl;
+			std::cout<<"Found (round1)"<<std::endl;
+			for (auto hit: undropped_hits) std::cout<<hit->index<<std::endl;		
+		}
+
 //		int drops = -1;
 		int i = 0;
 
@@ -390,17 +410,18 @@ void TrackFinder::FindTracks_kalman()
         	        kft_.finding = false;
                 	kft_.dropping = true;
 	                kft_.seed_was_used = used;
-			kft_.unadded_hits = unused_hits;
+					kft_.unadded_hits = unused_hits;
 
 			if (par_handler->par_map["debug"] == 1) std::cout << "second fit" << std::endl;
 
                 	kft_.kalman_all(undropped_hits, &current_seed);
 
+
 			if (kft_.status == -1)
-        	        {
+        	{
 				failed = true;
 	                        continue;
-        	        }
+        	}
 
 			good_hits = kft_.added_hits;
 
@@ -419,6 +440,13 @@ void TrackFinder::FindTracks_kalman()
 
 			unused_hits = kft_.unadded_hits;
 			unused_hits.insert(unused_hits.end(), kf_find.unadded_hits.begin(), kf_find.unadded_hits.end());
+
+			if (par_handler->par_map["debug"] == 1){ 		
+				std::cout<<"+Dropped (round2)"<<std::endl;
+				for (auto hit: kft_.unadded_hits) std::cout<<hit->index<<std::endl;
+				std::cout<<"Found (round2)"<<std::endl;
+				for (auto hit: good_hits) std::cout<<hit->index<<std::endl;		
+			}			
 
 //			int drops = 0;
 
@@ -441,7 +469,7 @@ void TrackFinder::FindTracks_kalman()
 //			           || !(cuts::kalman_v_drop[0] < v.norm() / constants::c && v.norm() / constants::c < cuts::kalman_v_drop[1]))
 				{
 					if (par_handler->par_map["debug"] == 1) {
-						std::cout << "hit dropped with y " << good_hits[n]->y << " chi " << ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) <<
+						std::cout << "hit"<< good_hits[n]->index <<" dropped with y " << good_hits[n]->y << " chi " << ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) <<
 							" v " << v.norm() / constants::c << std::endl;
 					}
 					unused_hits.push_back(good_hits[n]);

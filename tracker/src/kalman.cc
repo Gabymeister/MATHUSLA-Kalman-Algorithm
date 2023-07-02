@@ -33,7 +33,7 @@ KalmanFilter::KalmanFilter(
     const Eigen::MatrixXd &Q,
     const Eigen::MatrixXd &R,
     const Eigen::MatrixXd &P)
-    : A(A), C(C), Q(Q), R(R), P0(P), f_matrix(A),
+    : A(A), C(C), Q(Q), R(R), P0(P), f_matrix(A), P_add(A),
       m(C.rows()), n(A.rows()), dy(dy), initialized(false),
       I(n, n), x_hat(n), x_hat_new(n)
 {
@@ -200,7 +200,7 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
   //x_hat_new = A * x_hat;
   x_hat_new = f_matrix * x_hat; // In EKF, we should use the non-linear function to predict the state, and use the Jacobian A to predict the covariance.
 
-  P = A * P * A.transpose() + Q;
+  P = A * P * A.transpose() + Q + P_add;
   K = P * C.transpose() * (C * P * C.transpose() + R).inverse();
 
   A_k.push_back(A); // F_k
@@ -391,6 +391,7 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
 
    // what's the right way to do this?
     dy = a_hit->y - y_val;
+    auto dt_sigma = a_hit->ey;
 
 
     f_matrix << 1.0, .0, .0, dy / x_hat[4], .0, .0,
@@ -406,6 +407,13 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
       .0, .0, .0, 1.0, .0, .0,
       .0, .0, .0, .0, 1.0, .0,
       .0, .0, .0, .0, .0, 1.0;
+
+    P_add << dt_sigma*dt_sigma*x_hat[3]*x_hat[3], .0, .0, .0, .0, .0,
+             .0, dt_sigma*dt_sigma*x_hat[4]*x_hat[4], .0, .0, .0, .0, 
+             .0, .0, dt_sigma*dt_sigma*x_hat[5]*x_hat[5], .0, .0, .0, 
+             .0, .0, .0, .0, .0, .0, 
+             .0, .0, .0, .0, .0, .0, 
+             .0, .0, .0, .0, .0, .0;    
 
     // direction cosines
     double a = x_hat[3] / constants::c;

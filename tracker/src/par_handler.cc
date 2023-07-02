@@ -34,12 +34,15 @@ void ParHandler::GetPars() {
 
 	        std::string line;
         	while (std::getline(infile, line))
-        	{
-                	std::istringstream iss(line);
-                	std::string par;
-                	double value;
+        	{	
+				if (line[0]=='#')
+					continue;
 
-	                if (!(iss >> par >> value)) {
+				std::istringstream iss(line);
+				std::string par;
+				double value;
+
+				if (!(iss >> par >> value)) {
 	//			std::cout << "Sorry I couldn't find the parameters I need to run." << std::endl;
 				continue; } // error
 

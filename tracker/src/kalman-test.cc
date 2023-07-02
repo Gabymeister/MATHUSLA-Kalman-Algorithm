@@ -245,7 +245,7 @@ void kalman_track::find_first()
 
   // layers index of first_hit_list (times two to account for spaces between layers)
   if (seed_was_used)
-    start_ind = det_ind_to_layers[(first_hit_list[0]->det_id).layerIndex * 2];
+    start_ind = det_ind_to_layers[(first_hit_list[0]->det_id).layerIndex];
   else
     start_ind = det_ind_to_layers[seed_layer];
 

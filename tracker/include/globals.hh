@@ -2,9 +2,17 @@
 #include<vector>
 #include <fstream>
 #include <string>
+#include <iostream>
+
 
 #ifndef UNITS_HH
 #define UNITS_HH
+
+// A python-like print function
+template<typename T, typename ...TAIL>
+void print(const T &t, TAIL... tail);
+
+
 
 namespace units{
 	const double mm = 10.0;
