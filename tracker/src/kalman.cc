@@ -390,7 +390,7 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
   if (initialized) {
 
    // what's the right way to do this?
-//    dy = a_hit->y - y_val;
+    dy = a_hit->y - y_val;
 
 
     f_matrix << 1.0, .0, .0, dy / x_hat[4], .0, .0,
@@ -406,16 +406,7 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
       .0, .0, .0, 1.0, .0, .0,
       .0, .0, .0, .0, 1.0, .0,
       .0, .0, .0, .0, .0, 1.0;
-/*
-    double dt = a_hit->t - x_hat[1];
 
-    A << 1.0, .0, .0, dt, .0, .0,
-      .0, 1.0, .0, .0, dt / x_hat[4], .0,
-      .0, .0, 1.0, .0, .0, dt,
-      .0, .0, .0, 1.0, .0, .0,
-      .0, .0, .0, .0, 1.0, .0,
-      .0, .0, .0, .0, .0, 1.0;
-*/
     // direction cosines
     double a = x_hat[3] / constants::c;
     double b = x_hat[4] / constants::c;

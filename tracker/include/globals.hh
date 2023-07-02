@@ -55,6 +55,7 @@ namespace detector{
 													{16000.0*cm, 16900.0*cm} };
 
 	const std::vector<double> COSMIC_SHIFT = {0.0, 547*cm, 11950.0*cm}; // shift of sim cosmic -> main coordinates
+	const double surface_height = 8547*units::cm;
 
 	const int n_modules = 100;
 	const double scintillator_length = 450.0*units::cm;
@@ -87,19 +88,19 @@ namespace detector{
 
 	//FLOOR TILE WIDTHS
 
-	const double floor_x_width = 50.0*units::cm;
-	const double floor_z_width = 50.0*units::cm;
+	const double floor_x_width = scintillator_length; // 50.0*units::cm;
+	const double floor_z_width = scintillator_width; // 50.0*units::cm;
 
     //WALL TILE WIDTHS
 
-    const double wall_x_width = 50.0*units::cm;
-    const double wall_y_width = 50.0*units::cm;
+    const double wall_x_width = scintillator_width; // 50.0*units::cm;
+    const double wall_y_width = scintillator_length; // 50.0*units::cm;
 
     //WALL PARAMETERS
 
     const double wall_gap = 1.0*units::cm; //gap on each side of wall
-    const double wall_height = 2000.0*units::cm;
-//    const double wall_start_y = 6000.0*units::cm; //min y value of wall (casing included)
+    const double wall_gap2 = 100.0*units::cm; //gap between two walls
+    const double wall_height = 2600.0*units::cm;
     const double wall_start_y = y_min - 3*units::cm; //min y value of wall (casing included)
 
     //FOR statistics.hh ONLY - NEW MIN Z WITH WALL
@@ -163,7 +164,7 @@ namespace cuts{
         const int end_ev = 50;
 
     //digi hit cuts for floors and wall
-    const std::vector<bool> include_floor = { false, false, true }; //ith index for ith floor from bottom
+    const std::vector<bool> include_floor = { true, true }; //ith index for ith floor from bottom
 
     const bool include_wall = true;
     const double wall_y_cut = detector::wall_start_y + detector::wall_height; //all digi hits above this will be thrown out

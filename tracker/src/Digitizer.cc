@@ -111,52 +111,6 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 	gettimeofday(&curTime, NULL);
 	long int micro_sec = curTime.tv_usec;
 	srand( micro_sec );
-//	srand( time(NULL) + ev_num ); // incase called more than once per second across events
-/*
-	TRandom generator;
-
-	//TRandom3 generator;
-
-//	generator.SetSeed( rand()*rand()*rand() % rand() );
-//	int seed = 14557409;
-//	int seed = 897765236; // bad eff seed
-//	int seed = -182399494; // good eff seed
-//	int seed = rand()*rand()*rand() % rand();
-
-//        int seed = par_handler->par_map["seed"];
-
-	int seed_size = static_cast<int>(1e9);
-
-        seed = par_handler->par_map["seed"];
-        seed = seed == -1 ? rand()*rand()*rand() % seed_size : seed;
-
-        if (par_handler->par_map["debug"] == 1) {
-                std::cout << "Digi seed is: " << seed << std::endl;
-	}
-
-	generator.SetSeed(seed);
-
-	//std::cout << par_handler->par_map["scint_efficiency"];
-	//std::cout << 1.0 / par_handler->par_map["scint_efficiency"] << std::endl;
-
-	TRandom drop_generator;
-	//TRandom3 drop_generator;
-	drop_generator.SetSeed( rand()*rand()*rand() % rand() );
-*/
-	/*
-	for (auto digi : digis) {
-		// Rndm() uniformly samples (0,1) so 1 time in every scint_efficiency samples we don't satisfy this condition
-		if (drop_generator.Rndm() > 1.0 / par_handler->par_map["scint_efficiency"]) {
-			digis_not_dropped.push_back(digi);
-		}
-		//else std::cout << "dropped a hit" << std::endl;
-		// add a counter and push it to tree at some point???
-	}
-
-	digis.clear();
-	digis = digis_not_dropped;
-	digis_not_dropped.clear();
-	*/
 
 	// Now we throw out hits in the floor and wall to simulate reduced detector efficiency
 	std::vector<physics::digi_hit*> digis_not_dropped;
@@ -175,7 +129,10 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 		if (current_id.isFloorElement){
 			//if (current_id.isFloorElement) std::cout << digi->hits.size() << std::endl;
-			uncertainty = _geometry->_floor.uncertainty(current_id.layerIndex);
+			// uncertainty = _geometry->_floor.uncertainty(current_id.layerIndex);
+			layer = _geometry->layer_list[current_id.layerIndex];
+			uncertainty = layer->uncertainty();
+			long_direction_index = layer->long_direction_index;
 
 			//if (drop_generator.Rndm() > 1.0 / par_handler->par_map["scint_efficiency"]) {
 			if (drop_generator.Rndm() < par_handler->par_map["scint_efficiency"]) {
@@ -187,7 +144,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 			floor_wall_hits++;
 		}
 		else if (current_id.isWallElement){
-            		uncertainty = _geometry->_wall.uncertainty();
+            uncertainty = _geometry->_wall.uncertainty(current_id.zIndex);
 
 			//if (drop_generator.Rndm() > 1.0 / par_handler->par_map["scint_efficiency"]) {
 			if (drop_generator.Rndm() < par_handler->par_map["scint_efficiency"]) {
@@ -207,12 +164,14 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 		double e_sum = 0;
 		double long_direction_sum = 0.0;
 		double t_sum = 0;
-		//double y_sum = 0;
+		double x_sum = 0;
+		double y_sum = 0;
 
 		for (auto hit : digi->hits){
 			e_sum += hit->e;
 			t_sum += hit->t * hit->e;
-			//y_sum += hit->y * hit->e;
+			y_sum += hit->y * hit->e;
+			x_sum += hit->x * hit->e;
 
 			if (long_direction_index == 0){
 				long_direction_sum += hit->x * hit->e;
@@ -223,18 +182,31 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 		digi->e = e_sum;
 		digi->t = t_sum/e_sum;
-		digi->y = center[1];
 		//digi->y = y_sum/e_sum;
-		digi->ey = uncertainty[1];
 		digi->ex = uncertainty[0];
+		digi->ey = uncertainty[1];
 		digi->ez = uncertainty[2];
 
+		// --------------------Digitize---------------------------------------------
+		// Wall: to the center of each square
+		// Floor and tracking layers: to the center of each bar
 		//note: et is the same for all of them and is set in the digi class defintion
-		if (current_id.isFloorElement || current_id.isWallElement){
-			digi->x = center[0];
+		// if (current_id.isFloorElement || current_id.isWallElement){
+		if (current_id.isWallElement){
 			digi->z = center[2];
-	        } else {
-		    	if (long_direction_index == 0){
+			if (current_id.zIndex==0){
+				digi->x = center[0];
+				digi->y = y_sum/e_sum;
+			}
+			else if (current_id.zIndex==1){
+				digi->x = x_sum/e_sum;
+				digi->y = center[1];
+			}			
+
+	    } 
+		else {
+			digi->y = center[1];
+		    if (long_direction_index == 0){
 				digi->x = long_direction_sum/e_sum;
 				digi->z = center[2];
 			} else {
@@ -248,20 +220,44 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 		//we see the random number generator with a number that should be completly random:
 		//the clock time times the layer index times the number of digis
 
-
+		// Time smearing
 		digi->t += generator.Gaus(0.0, digi->et);
 
-		if (current_id.isFloorElement || current_id.isWallElement) {
-			if (!drop_me) { // it's a floor / wall hit
-				digis_not_dropped.push_back(digi);
+
+
+		//--Position smearing for Wall hits 		
+		//--2023-06-30 Tom: turn off
+		if (current_id.isWallElement) {
+			if (current_id.zIndex == 1) {
+				double smeared_x = digi->x + generator.Gaus(0.0, digi->ex);
+				if (!(_geometry->GetDetID(smeared_x, digi->y, digi->z) == current_id)){
+					if (smeared_x > center[0]) { smeared_x = center[0] + detector::wall_y_width/2.0 - 0.5*units::cm; }
+					else {smeared_x = center[0] - detector::wall_y_width/2.0 + 0.5*units::cm; }
+				}				
+				digi->x = smeared_x;
+
+			} else if (current_id.zIndex == 0){
+				double smeared_y = digi->y + generator.Gaus(0.0, digi->ey);
+				if (!(_geometry->GetDetID(digi->x, smeared_y, digi->z) == current_id)){
+					if (smeared_y > center[1]) { smeared_y = center[1] + detector::wall_y_width/2.0 - 0.5*units::cm; }
+					else {smeared_y = center[1] - detector::wall_y_width/2.0 + 0.5*units::cm; }
+				}						
+				digi->y = smeared_y;
 			}
+
+			if (!drop_me) { // it's a wall hit
+				digis_not_dropped.push_back(digi);
+				// std::cout<< digi->x <<", "<< digi->y <<", "<< digi->z <<std::endl;
+			}
+			// else	std::cout << "dropped a wall hit" << std::endl;
+
 			continue;
 		}
 
-		// it's a tracking / trigger layer hit
+		// Position smearing for Tracker && Floor hits
 		if (long_direction_index == 0) {
 			double smeared_x = digi->x + generator.Gaus(0.0, digi->ex);
-			if (!(_geometry->GetDetID(smeared_x, digi->y, digi->z) == current_id) ){
+			if (!(_geometry->GetDetID(smeared_x, digi->y, digi->z) == current_id)){
 				if (smeared_x > center[0]) { smeared_x = center[0] + (layer->widths())[0]/2.0 - 0.5*units::cm; }
 				else {smeared_x = center[0] - (layer->widths())[0]/2.0 + 0.5*units::cm; }
 			}
@@ -279,6 +275,9 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 		if ( !(_geometry->GetDetID(digi->x, digi->y, digi->z) == current_id) ){
 			std::cout << "Warning!!! Smearing function error--digi was smeared to be outside of known detector element!!" << std::endl;
+			// std::cout<<long_direction_index<<std::endl;
+			// 	std::cout<< digi->x <<", "<< digi->y <<", "<< digi->z <<" " << _geometry->_floor.GetFloorIndex(digi->x,digi-> y, digi->z)[0]<<" "<< _geometry->_floor.GetFloorIndex(digi->x,digi-> y, digi->z)[1]<<std::endl;
+			// 	std::cout<< center[0] <<", "<<  center[1] <<", "<<  center[2]  <<" " << _geometry->_floor.GetFloorIndex(center[0],center[1],center[2])[0]<<" "<< _geometry->_floor.GetFloorIndex(center[0],center[1],center[2])[1]<<std::endl;
 		}
 
 		//if (!drop_me) {

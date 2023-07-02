@@ -106,13 +106,6 @@ seed kalman_track::choose_seed(seed *current_seed)
       second_hit = layer_hits[layers.end()[-2]][0];
     }
 
-    // physics::digi_hit* second_hit = layer_hits[layers[3]][0];
-
-    // if(first_hit->det_id.layerIndex%2 == second_hit->det_id.layerIndex%2){
-    //   if(layers.size()>4){second_hit = layer_hits[layers[4]][0];}
-    //   else{second_hit = layer_hits[layers[2]][0];}
-    // }
-
     filt_seed = seed(first_hit,second_hit); // seed with bottom hits (we've chosen hits already)
   }
 
@@ -271,7 +264,6 @@ void kalman_track::find_first()
     }
 
     double chi = kf_find.update_gain(layer_hits[layers[i - 1]], y_step);
-//    double chi = kf_find.update_gain(layer_hits[layers[i - 1]], y);
 
     if (chi == -1.0)
     {
@@ -331,7 +323,7 @@ void kalman_track::filter()
     }
 
 
-    // Skip the layer with the second hit from seed
+    //-------Skip the layer with the second hit from seed
     // if (((seed_in_use.hits.second->det_id).layerIndex*2 == layers[i + 1]) && !finding && !dropping){
     //   // std::cout<< "layer ind " << (seed_in_use.hits.second->det_id).layerIndex*2 << ", layers[i+1] " <<layers[i + 1] << std::endl;
     //   skipped = true;
@@ -340,7 +332,6 @@ void kalman_track::filter()
     // }
 
     double chi = kf.update_gain(layer_hits[layers[i + 1]], y_step);
-//    double chi = kf.update_gain(layer_hits[layers[i + 1]], y);
 
     // no hit was found skip this layer
     if (chi == -1.0)
