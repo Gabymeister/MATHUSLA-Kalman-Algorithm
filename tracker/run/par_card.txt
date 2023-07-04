@@ -17,10 +17,9 @@ merge_distance 0.0
 vertex_seed_dist 500.0
 vertex_seed_chi2 250
 vertex_add_max_distance 600.0
-vertex_chi2_add 300.0
-vertex_chi2_drop 200.0
-vertex_chi2_final 60
-vertex_chi2_final_pval 0.998
+vertex_chi2_add 250.0
+vertex_chi2_drop 180.0
+vertex_chi2_final 50
 
 vertex_use_adaptive_fit 0
 vertex_adaptive_niters 6
@@ -37,5 +36,5 @@ kalman_v_drop[0] -9999
 kalman_v_drop[1] 9999
 
 start_ev 0.0
-end_ev 400.0
+end_ev 300.0
 noise_hz 0.0

@@ -57,6 +57,7 @@ void KalmanFilter::init_gain(const Eigen::VectorXd &x0, std::vector<physics::dig
 
   // y value of hits on first layer
   y_val = first_layer[0]->y;
+  y_val_err = first_layer[0]->ey;
 
   // use errors from first hit since they are the same for the entire layer
   R << first_layer[0]->ex, 0, 0,
@@ -106,8 +107,7 @@ void KalmanFilter::init_gain(const Eigen::VectorXd &x0, std::vector<physics::dig
 double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y, double dy)
 {
 
-  this->dy = dy;
-//  this->y_val = y_val + dy;
+  // this->dy = dy;
 
   double chi = update_gain(y);
   return chi;
@@ -210,6 +210,7 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
 
   // hit is chosen, update y_val to hit->y
   y_val = y->y;
+  y_val_err = y->ey;
 
   // calculate the increment in the chi squared
   Eigen::MatrixXd err_metric_p = R + C * P * C.transpose();
@@ -382,35 +383,32 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
   R << a_hit->ex, 0, 0,
       0, a_hit->et, 0,
       0, 0, a_hit->ez;
-//  R << a_hit->ex, 0, 0,
-//      0, a_hit->et * std::sqrt(2), 0,
-//      0, 0, a_hit->ez; // INCREASING T ERROR ARTIFICIALLY
   R = R * R;
 
   if (initialized) {
 
-   // what's the right way to do this?
+    // Calculate the step size: distance to the previous hit in  vertical  direction
     dy = a_hit->y - y_val;
-    auto dt_sigma = a_hit->ey;
-
+    // Calculate the uncertainty in step size.
+    auto dt_sigma2 = (y_val_err*y_val_err + a_hit->ey*a_hit->ey)/x_hat[4]*x_hat[4]; // sigma_t**2 = sigma_y**2/vy**2
 
     f_matrix << 1.0, .0, .0, dy / x_hat[4], .0, .0,
-      .0, 1.0, .0, .0, dy / (x_hat[4] * x_hat[4]), .0,
-      .0, .0, 1.0, .0, .0, dy / x_hat[4],
-      .0, .0, .0, 1.0, .0, .0,
-      .0, .0, .0, .0, 1.0, .0,
-      .0, .0, .0, .0, .0, 1.0;
+                .0, 1.0, .0, .0, dy / (x_hat[4] * x_hat[4]), .0,
+                .0, .0, 1.0, .0, .0, dy / x_hat[4],
+                .0, .0, .0, 1.0, .0, .0,
+                .0, .0, .0, .0, 1.0, .0,
+                .0, .0, .0, .0, .0, 1.0;
 
     A << 1.0, .0, .0, dy / x_hat[4], -dy* x_hat[3]/(x_hat[4] * x_hat[4]), .0,
-      .0, 1.0, .0, .0, -dy / (x_hat[4] * x_hat[4]), .0,
-      .0, .0, 1.0, .0, -dy* x_hat[5]/(x_hat[4] * x_hat[4]), dy / x_hat[4],
-      .0, .0, .0, 1.0, .0, .0,
-      .0, .0, .0, .0, 1.0, .0,
-      .0, .0, .0, .0, .0, 1.0;
+        .0, 1.0, .0, .0, -dy / (x_hat[4] * x_hat[4]), .0,
+        .0, .0, 1.0, .0, -dy* x_hat[5]/(x_hat[4] * x_hat[4]), dy / x_hat[4],
+        .0, .0, .0, 1.0, .0, .0,
+        .0, .0, .0, .0, 1.0, .0,
+        .0, .0, .0, .0, .0, 1.0;
 
-    P_add << dt_sigma*dt_sigma*x_hat[3]*x_hat[3], .0, .0, .0, .0, .0,
-             .0, dt_sigma*dt_sigma*x_hat[4]*x_hat[4], .0, .0, .0, .0, 
-             .0, .0, dt_sigma*dt_sigma*x_hat[5]*x_hat[5], .0, .0, .0, 
+    P_add << dt_sigma2*x_hat[3]*x_hat[3], .0, .0, .0, .0, .0,
+             .0, dt_sigma2, .0, .0, .0, .0, 
+             .0, .0, dt_sigma2*x_hat[5]*x_hat[5], .0, .0, .0, 
              .0, .0, .0, .0, .0, .0, 
              .0, .0, .0, .0, .0, .0, 
              .0, .0, .0, .0, .0, .0;    

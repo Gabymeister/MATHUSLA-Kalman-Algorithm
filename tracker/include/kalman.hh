@@ -228,6 +228,7 @@ public:
   // Discrete height step
   double dy;
   double y_val;
+  double y_val_err;
 
   // run options
   bool dropping;

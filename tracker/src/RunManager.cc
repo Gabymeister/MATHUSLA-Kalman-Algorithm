@@ -56,8 +56,10 @@ int RunManager::StartTracking()
 		if (events_handled >= hndlr.par_map["start_ev"]) //cuts::start_ev)
 		{
 
+			if (hndlr.par_map["debug"] == 1) 
+				std::cout << "\n"<< std::endl;
 			if ((events_handled) % 1000 == 0 || hndlr.par_map["debug"] == 1 || hndlr.par_map["debug_vertex"] == 1 )
-				std::cout << "\n=== Event is " << events_handled <<" ==="<< std::endl;
+				std::cout << "=== Event is " << events_handled <<" ==="<< std::endl;
 
 			TotalEventsProcessed++;
 			_digitizer->clear();

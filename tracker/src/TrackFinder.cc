@@ -33,7 +33,7 @@ void TrackFinder::Seed()
 			if (layer1>detector::n_layers || layer2>detector::n_layers )
 				continue;
 
-			// Bypass seeds pairs that are within 3 layers
+			// Excluding seeds pairs that are within 3 layers
 			if (TMath::Abs(hits_k[first]->y-hits_k[second]->y)<210)
 				continue;
 
