@@ -4,23 +4,38 @@ debug_vertex 0.0
 seed 1.0
 p 500.0
 
-seed_interval 250.0
-kalman_chi_add 11.0
-kalman_pval_drop 0.98
-kalman_pval_track 0.99
-
-
+# Scintillator inefficiency for wall/floor (probability of dropping a hit)
 scint_efficiency 0.001
+
+
+# Track related
+seed_interval 250.0
+kalman_chi_add 9.0
+kalman_chi_add_floorwall 100.0
+kalman_pval_drop 0.98
+kalman_pval_drop_floorwall 1
+kalman_pval_track 0.99
+kalman_v_add[0] 0.8
+kalman_v_add[1] 1.2
+kalman_v_drop[0] -9999
+kalman_v_drop[1] 9999
+
+
+# Track merging. 
+# - merge_cos_theta: set to -2.0 to disable track merging
 merge_cos_theta -2.0
 merge_distance 0.0
 
+# Vertex related
 vertex_seed_dist 500.0
 vertex_seed_chi2 250
 vertex_add_max_distance 600.0
-vertex_chi2_add 250.0
-vertex_chi2_drop 180.0
-vertex_chi2_final 50
+vertex_chi2_add 300.0
+vertex_chi2_drop 200.0
+vertex_chi2_final 60
 
+# Vertex adaptive fit (does not work)
+# - vertex_use_adaptive_fit: set to 0 to disable
 vertex_use_adaptive_fit 0
 vertex_adaptive_niters 6
 vertex_adaptive_r 0.33
@@ -28,13 +43,14 @@ vertex_adaptive_T0 256
 vertex_adaptive_chi2 50
 
 
+# Kalman filter vertexer (not working)
 kalman_vertex_chi_add 100000.0
 kalman_vertex_chi 100.0
-kalman_v_add[0] 0.8
-kalman_v_add[1] 1.2
-kalman_v_drop[0] -9999
-kalman_v_drop[1] 9999
 
+
+# Run parameters
+# - start_ev: start event index
+# - end_ev: end event index (not included)
 start_ev 0.0
-end_ev 300.0
+end_ev 37700.0
 noise_hz 0.0

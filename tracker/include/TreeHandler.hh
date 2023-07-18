@@ -187,6 +187,7 @@ public:
         OutputTree->Branch("Digi_particle_energy", &digi_particle_energy);
         OutputTree->Branch("Digi_pdg_id", &digi_pdg);
         OutputTree->Branch("Digi_track_id", &digi_track_id);
+        OutputTree->Branch("Digi_layer_id", &digi_layer_id);
         OutputTree->Branch("Digi_seed", &digi_seed, "Digi_seed/L");
 //        OutputTree->Branch("Digi_hitIndices", &digi_hit_indices);
 
@@ -475,6 +476,7 @@ public:
     std::vector<double> digi_particle_energy;
     std::vector<int> digi_pdg;
     std::vector<int> digi_track_id;
+    std::vector<int> digi_layer_id;
   	std::vector<int> digi_hit_indices;
   	std::vector<int> Digi_numHits;
     long long int digi_seed;
@@ -496,6 +498,7 @@ void TreeHandler::ExportDigis(std::vector<digi_hit*> digi_list, long long int se
       digi_particle_energy.clear();
       digi_pdg.clear();
 	  digi_track_id.clear();
+	  digi_layer_id.clear();
       
       digi_seed = seed;
 
@@ -512,6 +515,7 @@ void TreeHandler::ExportDigis(std::vector<digi_hit*> digi_list, long long int se
         digi_particle_energy.push_back(digi->particle_energy);
         digi_pdg.push_back(digi->pdg);
 		digi_track_id.push_back(digi->min_track_id);
+		digi_layer_id.push_back(digi->det_id.layerIndex);
         for (auto hit : digi->hits){
           digi_hit_indices.push_back(hit->index);
         }

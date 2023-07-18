@@ -10,6 +10,7 @@
 #include "VertexFinder.hh"
 #include <iostream>
 #include <fstream>
+#include <numeric>  
 #include "kalman.hh"
 #include "par_handler.hh"
 
@@ -125,6 +126,37 @@ public:
       det_ind_to_layers[layers[i]] = i;
 
   }  
+
+  // Sort hits by time
+  void time_sort(){
+
+    std::vector<double> hits_time;
+    std::vector<int> layers_sorted;
+    for (int i = 0; i < layers.size(); i++){
+      hits_time.push_back(layer_hits[layers[i]][0]->t);
+    }
+
+    // for (int i = 0; i < layers.size(); i++){
+    //   std::cout<<  "layer: "<<  layers[i] << ", time: "<< hits_time[i]<< std::endl;
+    // }    
+
+    // Sort layer index with time
+    std::vector<int> V(layers.size());
+    std::iota(V.begin(),V.end(),0); //Initializing    
+    std::sort( V.begin(),V.end(), [&](int i,int j) {return hits_time[i]<hits_time[j];} );
+
+    for (int i = 0; i < V.size(); i++){
+      // std::cout<<  "time sorted"<< V[i]<< std::endl;
+      layers_sorted.push_back(layers[V[i]]);
+    }
+    layers = layers_sorted;
+
+    // Remake det_ind_to_layers:
+    for (int i = 0; i < layers.size(); i++)
+    {
+      det_ind_to_layers[layers[i]] = i; 
+    }
+  }
 
   void init_first_state();
   void init_matrices(seed *current_seed);
@@ -312,6 +344,11 @@ private:
 
     // Dropping round 2 (hits that are dropped during backward finding)
     if (finding) unadded_hits.insert(unadded_hits.end(), kf_find.unadded_hits.begin(), kf_find.unadded_hits.end());
+
+		if (par_handler->par_map["debug"] == 1){ 		
+			std::cout<<"Dropped (backward finding)"<<std::endl;
+			for (auto hit: kf_find.unadded_hits) std::cout<<hit->index<<std::endl;
+		}    
 
     // Dropping round 3 (other hits that are on the seed layer)
     for (auto hit : layer_hits[filter_start_layer])

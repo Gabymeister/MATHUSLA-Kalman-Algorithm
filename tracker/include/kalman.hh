@@ -55,10 +55,13 @@ public:
 
     double min_val;
 
-    if (initialized)
-      min_val = par_handler->par_map["kalman_chi_add"];
-//      min_val = par_handler->par_map["kalman_pval_add"];
-//      min_val = cuts::kalman_chi_add;
+    if (initialized){
+      if (hits[0]->det_id.isWallElement || hits[0]->det_id.isFloorElement){
+        min_val = par_handler->par_map["kalman_chi_add_floorwall"];
+      }
+      else
+        min_val = par_handler->par_map["kalman_chi_add"];
+    }
     else
       min_val = 1e6; // if the filter hasn't been initialised take hit
                      // with lowest chi regardless of the value

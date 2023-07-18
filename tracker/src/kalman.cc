@@ -178,7 +178,7 @@ double KalmanFilter::update_gain(const std::vector<physics::digi_hit *> y_list)
   std::vector<int> hit_inds = find_nearest(y_list, x_hat);
   // // if there is energy sharing, merge the hit with lowest chi2 with the one in the adjacent bar
 
-  // Select the hit with lowest chi2. hit_inds[0] is index of hit w lowest chi that meets beta cut
+  // Select the hit with lowest chi2. hit_inds[0] is index of hit w lowest chi
   physics::digi_hit *y;
   y = y_list[hit_inds[0]];
 
@@ -359,17 +359,26 @@ double KalmanFilter::smooth_gain(const physics::digi_hit *y, int k)
   }
 
   double ndof = x_f.size();
-  ndof = ndof > 1.0 ? 3.0 * ndof - 6.0 : 1.0;
+  // ndof = ndof > 1.0 ? 3.0 * ndof - 6.0 : 1.0;
+  ndof = 3.0;
 
-  if (dropping
-     && (ROOT::Math::chisquared_cdf(chi_plus_s, ndof) >= par_handler->par_map["kalman_pval_drop"]
-     || !(par_handler->par_map["kalman_v_drop[0]"] < v.norm() / constants::c && v.norm() / constants::c < par_handler->par_map["kalman_v_drop[1]"])))
+  bool DROPPED = false;
+
+  if (dropping && (y->det_id.isWallElement || y->det_id.isFloorElement)
+    && (ROOT::Math::chisquared_cdf(chi_plus_s, ndof) >= par_handler->par_map["kalman_pval_drop_floorwall"])){
+      DROPPED=true;
+  }
+  else if (dropping && (ROOT::Math::chisquared_cdf(chi_plus_s, ndof) >= par_handler->par_map["kalman_pval_drop"]))
+    //  || !(par_handler->par_map["kalman_v_drop[0]"] < v.norm() / constants::c && v.norm() / constants::c < par_handler->par_map["kalman_v_drop[1]"])))
+  {
+    DROPPED=true;
+  }
+  
+  if (DROPPED)
   {
     Eigen::MatrixXd K_n = P_n * C.transpose() * (-R + C * P_n * C.transpose()).inverse();
-
     x_n = x_n + K_n * (Y - C * x_n);
     P_n = (I - K_n * C) * P_n;
-
 //    std::cout << "hit was dropped, new state is  " << x_n.transpose() << std::endl;
   }
 
@@ -390,7 +399,16 @@ void KalmanFilter::update_matrices(physics::digi_hit *a_hit)
     // Calculate the step size: distance to the previous hit in  vertical  direction
     dy = a_hit->y - y_val;
     // Calculate the uncertainty in step size.
-    auto dt_sigma2 = (y_val_err*y_val_err + a_hit->ey*a_hit->ey)/x_hat[4]*x_hat[4]; // sigma_t**2 = sigma_y**2/vy**2
+    // auto dt_sigma2 = (y_val_err*y_val_err + a_hit->ey*a_hit->ey)/x_hat[4]*x_hat[4]; // sigma_t**2 = sigma_y**2/vy**2
+    double dt_sigma2=0;
+    if (a_hit->ey < 0.8 && y_val_err <0.8)
+      dt_sigma2=0.0;
+    else if (y_val_err <0.8)
+      dt_sigma2 = (a_hit->ey*a_hit->ey)/x_hat[4]*x_hat[4]; // sigma_t**2 = sigma_y**2/vy**2
+    else if (a_hit->ey <0.8)
+      dt_sigma2 = (y_val_err*y_val_err)/x_hat[4]*x_hat[4]; // sigma_t**2 = sigma_y**2/vy**2  
+    else    
+      dt_sigma2 = (y_val_err*y_val_err + a_hit->ey*a_hit->ey)/x_hat[4]*x_hat[4]; // sigma_t**2 = sigma_y**2/vy**2
 
     f_matrix << 1.0, .0, .0, dy / x_hat[4], .0, .0,
                 .0, 1.0, .0, .0, dy / (x_hat[4] * x_hat[4]), .0,

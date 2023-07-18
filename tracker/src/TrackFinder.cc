@@ -463,13 +463,24 @@ void TrackFinder::FindTracks_kalman()
 				v << kft_.v_s_list[n][0], kft_.v_s_list[n][1], kft_.v_s_list[n][2];
 
 
-				if (ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) >= par_handler->par_map["kalman_pval_drop"]
-			           || !(par_handler->par_map["kalman_v_drop[0]"] < v.norm() / constants::c
-				   && v.norm() / constants::c < par_handler->par_map["kalman_v_drop[1]"]))
-//			           || !(cuts::kalman_v_drop[0] < v.norm() / constants::c && v.norm() / constants::c < cuts::kalman_v_drop[1]))
+				// if (ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) >= par_handler->par_map["kalman_pval_drop"]
+			    //        || !(par_handler->par_map["kalman_v_drop[0]"] < v.norm() / constants::c
+				//    && v.norm() / constants::c < par_handler->par_map["kalman_v_drop[1]"]))
+				bool DROPPED = false;
+
+				if (good_hits[n]->det_id.isWallElement || good_hits[n]->det_id.isFloorElement){
+					DROPPED=(ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) >= par_handler->par_map["kalman_pval_drop_floorwall"]);
+				}
+				else if ((ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) >= par_handler->par_map["kalman_pval_drop"]))
+					//  || !(par_handler->par_map["kalman_v_drop[0]"] < v.norm() / constants::c && v.norm() / constants::c < par_handler->par_map["kalman_v_drop[1]"])))
+				{
+					DROPPED=true;
+				}		
+
+				if (DROPPED)		
 				{
 					if (par_handler->par_map["debug"] == 1) {
-						std::cout << "hit"<< good_hits[n]->index <<" dropped with y " << good_hits[n]->y << " chi " << ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) <<
+						std::cout << "hit"<< good_hits[n]->index <<" dropped with y " << good_hits[n]->y << " chi_cdf " << ROOT::Math::chisquared_cdf(kft_.chi_s[n], ndof) <<
 							" v " << v.norm() / constants::c << std::endl;
 					}
 					unused_hits.push_back(good_hits[n]);
@@ -578,14 +589,42 @@ void TrackFinder::FindTracks_kalman()
 
 		// if (current_track->nlayers() >= cuts::track_nlayers && chi_sum < par_handler->par_map["kalman_track_chi"])
 		// Cut on p-value instead of chi2/dof
-		if (current_track->nlayers() >= cuts::track_nlayers && (ROOT::Math::chisquared_cdf(chi_sum, ndof) <= par_handler->par_map["kalman_pval_track"]))
+		double chi2_cdf = ROOT::Math::chisquared_cdf(chi_sum, ndof);
+		if (current_track->nlayers() >= cuts::track_nlayers && (chi2_cdf<= par_handler->par_map["kalman_pval_track"]))
 		{
 			tracks_k.push_back(current_track);
 
 			if (par_handler->par_map["debug"] == 1) std::cout << "Track made it" << std::endl;
 		}
+		else if(chi2_cdf> par_handler->par_map["kalman_pval_track"])
+		{
+			bool IsFloorWallTrack=false;
+			for (auto hit: current_track->hits){
+				if (hit->det_id.isFloorElement || hit->det_id.isWallElement){
+					IsFloorWallTrack=true;
+					break;
+				}
+			}
+			if (IsFloorWallTrack){
+				tracks_k.push_back(current_track);
+				if (par_handler->par_map["debug"] == 1) std::cout << "Track made it (wall/floor track, no chi2 cut)" << std::endl;				
+			}
+			else{
+				if (par_handler->par_map["debug"] == 1) std::cout << "Track failed, large chi2. Chi2/dof: " << chi_sum << "/" << ndof <<", p=" << chi2_cdf<< std::endl;
+				delete current_track;
+				continue;	
+			}
+			
+		}
 		else
 		{
+			// If it is a track with floor/wall hits, ignore the chi2 cut
+			if (current_track->nlayers() < cuts::track_nlayers && (par_handler->par_map["debug"] == 1))
+				std::cout << "Track failed, not enough hits. N hits " << current_track->nlayers() << std::endl;
+
+			// if ((chi2_cdf> par_handler->par_map["kalman_pval_track"]) && (par_handler->par_map["debug"] == 1))
+			// 	std::cout << "Track failed, large chi2. Chi2/dof: " << chi_sum << "/" << ndof <<", p=" << chi2_cdf<< std::endl;
+
 			delete current_track;
 			continue;
 		}

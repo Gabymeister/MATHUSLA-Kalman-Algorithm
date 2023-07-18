@@ -68,10 +68,10 @@ void VertexFinder::Seed_k_m()
 	std::sort(seeds_k_m.begin(), seeds_k_m.end(), [](vertex_seed a, vertex_seed b) -> bool
 			  { return a.score() < b.score(); });
 
-	if(par_handler->par_map["debug_vertex"]==1){
-		for (auto sd:seeds_k_m)
-			std::cout <<"  seed chi2: "<<sd.chi2<<".\t Seed dist: "<<sd.closest_dist << ",\t N tracks "<< sd.compatible_tracks<< ".\t Layers: " << sd.tracks.first->chi_s.size()+sd.tracks.second->chi_s.size()<<std::endl;
-	}			  
+	// if(par_handler->par_map["debug_vertex"]==1){
+	// 	for (auto sd:seeds_k_m)
+	// 		std::cout <<"  seed chi2: "<<sd.chi2<<".\t Seed dist: "<<sd.closest_dist << ",\t N tracks "<< sd.compatible_tracks<< ".\t Layers: " << sd.tracks.first->chi_s.size()+sd.tracks.second->chi_s.size()<<std::endl;
+	// }			  
 
 } //VF:Seed
 
@@ -235,6 +235,10 @@ void VertexFinder::FindVertices_k_m_hybrid()
 				if(par_handler->par_map["debug_vertex"]==1)
 					std::cout<<"     -track #"<<unused_tracks.back()->index <<" dropped from fit with delta-Chi2 "<<*max_chi2<<std::endl;
 
+				if (used_tracks.size()<2){
+					break; // Stop dropping, if there are not enough tracks
+				}					
+
 				// Fit again
 				auto status = fitter.fit(used_tracks, seed_midpoint, 1.0);	
 				delta_chi2_list = fitter.delta_chi2();
@@ -245,16 +249,14 @@ void VertexFinder::FindVertices_k_m_hybrid()
 
 			}
 
-
 			if (used_tracks.size()<2){
 				for (auto track : used_tracks)
 					unused_tracks.push_back(track);
 				tracks_k_m = unused_tracks;
 				if(par_handler->par_map["debug_vertex"]==1) std::cout <<"   FAILED (no enough tracks) "<<std::endl;
 				continue; // Skip, if there are not enough tracks
-			}
-
-			// Fit again
+			}			
+			// Fit again with higher accuracy
 			status = fitter.fit(used_tracks, seed_midpoint, 0.1);
 
 		}
@@ -263,7 +265,14 @@ void VertexFinder::FindVertices_k_m_hybrid()
 		}
 		delta_chi2_list = fitter.delta_chi2();
 
-		
+
+		if (used_tracks.size()<2){
+			for (auto track : used_tracks)
+				unused_tracks.push_back(track);
+			tracks_k_m = unused_tracks;
+			if(par_handler->par_map["debug_vertex"]==1) std::cout <<"   FAILED (no enough tracks) "<<std::endl;
+			continue; // Skip, if there are not enough tracks
+		}			
 
 
 		auto chi2_sum = fitter._merit;

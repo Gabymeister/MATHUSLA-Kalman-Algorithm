@@ -33,6 +33,10 @@ void kalman_track::kalman_all(std::vector<physics::digi_hit *> trackhits, seed *
   // sort hits by layer
   layer_sort(trackhits);
 
+  // sort hits by time (if not finding)
+  if (!finding)
+    time_sort();
+
   // status == 1 => currently working
   status = 1;
 
@@ -99,6 +103,19 @@ seed kalman_track::choose_seed(seed *current_seed)
     filt_seed = *current_seed; // seed based on ds^2 (for hit selection)
   }
   else {
+
+    // int layer_index1,layer_index2;
+    // for (auto i=0; i<layers.size(); i++){
+    //   if (layers[i]<detector::n_layers)
+    //   {
+    //     layer_index1 = layers[i];
+    //     for (auto i=0; i<layers.size(); i++){
+    //     }
+    //     break;
+    //   }
+    // }
+
+
     physics::digi_hit* first_hit = layer_hits[layers[0]][0];
     physics::digi_hit* second_hit = layer_hits[layers.end()[-1]][0];
 
