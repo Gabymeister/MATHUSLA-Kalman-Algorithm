@@ -29,8 +29,8 @@ void TrackFinder::Seed()
 			if (layer1 == layer2)
 				continue;
 				
-			// Excluding wall hits
-			if (layer1>detector::n_layers || layer2>detector::n_layers )
+			// Excluding wall/floor hits
+			if (layer1>detector::n_layers || layer2>detector::n_layers || layer1<cuts::include_floor.size() || layer2<cuts::include_floor.size() )
 				continue;
 
 			// Excluding seeds pairs that are within 3 layers
@@ -451,8 +451,7 @@ void TrackFinder::FindTracks_kalman()
 //			int drops = 0;
 
 			double ndof = good_hits.size();
-			ndof = (3.0 * ndof - 6.0)/ndof;
-			// ndof = ndof > 1.0 ?  ndof: 1.0;
+			// During dropping, the DOF for each step is equal to the dimension of the measurement.
 			ndof = 3.0;
 
 			//dropping hits
@@ -561,7 +560,7 @@ void TrackFinder::FindTracks_kalman()
 
 		//double ndof = kft_2.chi_s.size();
 		ndof = kft_2.chi_s.size();
-		ndof = ndof > 1.0 ? 3.0 * ndof - 6.0 : 1.0;
+		ndof = ndof > 1.0 ? 3.0 * ndof - 4.0 : 1.0;
 
 		for (auto chi : kft_2.chi_f) {
 			local_chi_f.push_back(chi);
@@ -587,24 +586,27 @@ void TrackFinder::FindTracks_kalman()
 		//chi_sum = chi_sum / (4.0 * kft_2.chi_s.size() - 6.0); // always non_negative due to num_hit cut (if track can be passed)
 		// chi_sum = chi_sum / ndof;
 
-		// if (current_track->nlayers() >= cuts::track_nlayers && chi_sum < par_handler->par_map["kalman_track_chi"])
-		// Cut on p-value instead of chi2/dof
+		// Calculate the chi2 p value, and check if it has wall/floor hit
 		double chi2_cdf = ROOT::Math::chisquared_cdf(chi_sum, ndof);
+		current_track->chi2_pval = chi2_cdf;
+		bool IsFloorWallTrack=false;
+		for (auto hit: current_track->hits){
+			if (hit->det_id.isFloorElement || hit->det_id.isWallElement){
+				IsFloorWallTrack=true;
+				break;
+			}
+		}
+		current_track->IsFloorWallTrack=IsFloorWallTrack;
+
 		if (current_track->nlayers() >= cuts::track_nlayers && (chi2_cdf<= par_handler->par_map["kalman_pval_track"]))
 		{
 			tracks_k.push_back(current_track);
 
 			if (par_handler->par_map["debug"] == 1) std::cout << "Track made it" << std::endl;
 		}
+		// If it is a track with floor/wall hits, ignore the chi2 cut
 		else if(chi2_cdf> par_handler->par_map["kalman_pval_track"])
-		{
-			bool IsFloorWallTrack=false;
-			for (auto hit: current_track->hits){
-				if (hit->det_id.isFloorElement || hit->det_id.isWallElement){
-					IsFloorWallTrack=true;
-					break;
-				}
-			}
+		{  
 			if (IsFloorWallTrack){
 				tracks_k.push_back(current_track);
 				if (par_handler->par_map["debug"] == 1) std::cout << "Track made it (wall/floor track, no chi2 cut)" << std::endl;				
@@ -618,7 +620,7 @@ void TrackFinder::FindTracks_kalman()
 		}
 		else
 		{
-			// If it is a track with floor/wall hits, ignore the chi2 cut
+			
 			if (current_track->nlayers() < cuts::track_nlayers && (par_handler->par_map["debug"] == 1))
 				std::cout << "Track failed, not enough hits. N hits " << current_track->nlayers() << std::endl;
 

@@ -153,6 +153,8 @@ namespace physics{
 		double t0, et0;
         double distance; //distance to vertex
         double distance_weighted; //error-weighted distance to vertex
+        double chi2_pval;
+        bool IsFloorWallTrack;
 	        int first_layer;
 		std::vector<int> hits_to_drop = {};
 		//std::vector<int> _holes;

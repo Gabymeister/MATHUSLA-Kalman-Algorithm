@@ -86,8 +86,8 @@ namespace physics {
 		}
 
     double track::chi2_per_dof(){
-      	int n_track_params = 6;
-      	int ndof = (4.0*hits.size() - n_track_params );
+      	int n_track_params = 4;
+      	int ndof = (3.0*hits.size() - n_track_params );
       	if (ndof < 1) ndof = 1;
       	return chi2()/ndof; //FIX ME
       }

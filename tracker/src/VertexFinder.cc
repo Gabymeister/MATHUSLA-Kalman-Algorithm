@@ -24,6 +24,16 @@ void VertexFinder::Seed_k_m()
 			auto tr2 = tracks_k_m[n2];
 			auto closest_dist = tr1->closest_approach(tr2);
 
+			// Skip the tracks with large chi2
+			if (tr1->chi2_pval > par_handler->par_map["vertex_track_pval"] || tr2->chi2_pval > par_handler->par_map["vertex_track_pval"]){
+				continue;
+			}
+
+			if (tr1->IsFloorWallTrack || tr2->IsFloorWallTrack){
+				continue;
+			}
+
+
 			if (closest_dist < par_handler->par_map["vertex_seed_dist"])
 			{
 
@@ -119,19 +129,15 @@ void VertexFinder::FindVertices_k_m_hybrid()
 		// First, add tracks from seed
 		used_tracks.push_back(current_seed.tracks.first);
 		used_tracks.push_back(current_seed.tracks.second);
-		// Second, calculate the distance from each track to the seed
-		// , and sort by the distance (small->large)
-		// for (auto tr : tracks_k_m)
-		// 	tr->distance = tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]);
-		// std::sort(tracks_k_m.begin(), tracks_k_m.end(), [](physics::track* a, physics::track* b) -> bool
-		// 	  { return a->distance < b->distance; });
+
 		
-		// Then deal with the rest 
-		// for (auto tr : tracks_k_m)
+		// Then deal with the remaining tracks
+		// calculate the distance from each track to the seed
+		// and sort by the chi2 (small->large)
 		auto ntracks = tracks_k_m.size();
 		for (auto itrack=0; itrack<ntracks; itrack++)
 		{	
-			// sort tracks by distance to seed_midpoint. This is inside the for loop to keep it updated with changing seed_midpoint
+			// sort tracks by chi2 to seed_midpoint. This is inside the for loop to keep it updated with changing seed_midpoint
 			for (auto tr_temp : tracks_k_m){
 				// tr_temp->distance = tr_temp->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]);
 				tr_temp->distance_weighted = tr_temp->chi2_distance_to_pointerror(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3], parameter_errors);
@@ -140,6 +146,17 @@ void VertexFinder::FindVertices_k_m_hybrid()
 				{ return a->distance_weighted < b->distance_weighted; });
 			auto tr = tracks_k_m.front();
 			tr->distance = tr->distance_to(Vector(seed_midpoint[0],seed_midpoint[1],seed_midpoint[2]),seed_midpoint[3]);
+			
+			// Skip the tracks with large chi2
+			if (tr->chi2_pval > par_handler->par_map["vertex_track_pval"]){
+				unused_tracks.push_back(tr);
+				continue;
+			}
+			if (par_handler->par_map["vertex_exclude_floorwall"]==1 && tr->IsFloorWallTrack ){
+				// std::cout<< "floor track excluded"<<std::endl;
+				unused_tracks.push_back(tr);
+				continue;
+			}
 
 			if(par_handler->par_map["debug_vertex"]==1)
 				// std::cout << "                   -parameters now: " << seed_midpoint[0] << ", " << seed_midpoint[1] << ", " << seed_midpoint[2] << ", " << seed_midpoint[3] << std::endl;

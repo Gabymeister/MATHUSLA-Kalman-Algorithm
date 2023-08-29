@@ -668,7 +668,7 @@ void TreeHandler::ExportTracks_k_m(std::vector<Track*> track_list){
 			for (auto chi : tr->chi_s) {
 				chi_sum += chi;
 			}
-			chi_sum = chi_sum / (4.0*tr->chi_s.size() - 6.0);
+			chi_sum = chi_sum / (3.0*tr->chi_s.size() - 4.0);
 			track_k_m_smooth_chi_sum.push_back(chi_sum); // final chi per ndof for the track
 
       // Indices of various sorts
