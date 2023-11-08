@@ -319,6 +319,45 @@ namespace physics {
 		return chi2_distance_to_pointerror(point, t, {0,0,0});
     }		
 
+    Eigen::MatrixXd track::Q_final(double dt, double a, double b, double c)
+    {
+      // See MATHUSLA Calculations paper in ../docs/ for details
+
+      Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(3, 3);
+
+      double mag = std::sqrt(a*a + b*b + c*c);
+      a /= mag; // normalise to 1 (ensures positive definite)
+      b /= mag;
+      c /= mag;
+      double sin_theta = std::sqrt(b*b) / 1.0; // CORRECT ONE
+
+      Q << 1-a*a,   a*b,   a*c,
+            a*b, 1-b*b,   b*c,
+            a*c,   b*c,  1-c*c;    
+
+
+      double L_Al = 0.5*(detector::scintillator_height - detector::scintillator_thickness); // [cm] Aluminum
+
+      double L_Sc = detector::scintillator_thickness; // [cm] Scintillator
+
+      double L_r_Sc = 43; // [cm] Radiation length Scintillator (Saint-Gobain paper)
+      double L_r_Al = 24.0111; // [g cm^(-2)] Radiation length Aluminum
+
+      double rho_Al = 2.7; // [g cm^(-3)] density of Aluminum
+      L_r_Al /= rho_Al; // [cm]
+
+      double L_rad = L_Al / L_r_Al + L_Sc / L_r_Sc; // [rad lengths] orthogonal to Layer
+
+      L_rad /= sin_theta; // [rad lengths] in direction of track
+
+      double sigma_ms = 13.6 * std::sqrt(L_rad) * (1 + 0.038 * std::log(L_rad)); //
+      sigma_ms /= 500; // Fix the momentum to 500 MeV
+
+      Q = Q * std::pow(sigma_ms*dt*mag, 2); // Scattering contribution to process noise
+        
+      return Q;
+
+    }    
 
 	double track::chi2_distance_to_pointerror(Vector point, double t, std::vector <double> point_err){
 
@@ -347,6 +386,10 @@ namespace physics {
 		CovMatrix_vertex(0,0)=CovMatrix_vertex(0,0)+point_err.at(0)*point_err.at(0);
 		CovMatrix_vertex(1,1)=CovMatrix_vertex(1,1)+point_err.at(1)*point_err.at(1);
 		CovMatrix_vertex(2,2)=CovMatrix_vertex(2,2)+point_err.at(2)*point_err.at(2);
+        
+        // Add the contribution of scattering
+        Eigen::MatrixXd CovMatrix_scatter = Q_final(dt, vx, vy, vz);
+        CovMatrix_vertex +=CovMatrix_scatter;
 
     	//now we calculate the Chi2
 		Eigen::VectorXd residual_vector(3);

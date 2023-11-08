@@ -31,11 +31,11 @@ vertex_track_pval 0.995
 # Set "vertex_exclude_floorwall" to 1 to exclude tracks with floor/wall hits in vertex fit
 vertex_exclude_floorwall 0
 vertex_seed_dist 300.0
-vertex_seed_chi2 6
+vertex_seed_chi2 20
 vertex_add_max_distance 300.0
-vertex_chi2_add 12
-vertex_chi2_drop 6.0
-vertex_chi2_final 3
+vertex_chi2_add 25.0
+vertex_chi2_drop 20.0
+vertex_chi2_final 8
 
 # vertex_chi2_add 100.0
 # vertex_chi2_drop 80.0

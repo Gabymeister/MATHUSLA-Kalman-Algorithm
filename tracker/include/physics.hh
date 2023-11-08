@@ -267,6 +267,7 @@ namespace physics{
         double err_distance_to_mod(Vector point, double t);        
 
         //error in above distance_to calculation
+        Eigen::MatrixXd Q_final(double dt, double a, double b, double c);       
         double chi2_distance_to(Vector point, double t);       
         double chi2_distance_to_pointerror(Vector point, double t, std::vector <double> point_err);
 
