@@ -28,61 +28,36 @@ namespace detector{
 	const double ip_z = 0.0;
 
 
-/*	const std::vector<std::vector<double>> LAYERS_Y={{6003.0*cm + 547*cm, 6006.0*cm + 547*cm,},  //layer 0
- 												 	{6106.0*cm + 547*cm, 6109.0*cm + 547*cm}, //layer 1
-													{6209.0*cm + 547*cm, 6212.0*cm + 547*cm}, //layer 2
- 													{8003.0*cm + 547*cm, 8006.0*cm + 547*cm}, //layer 3
- 													{8106.0*cm + 547*cm, 8109.0*cm + 547*cm}, //layer 4
- 													{8503.0*cm + 547*cm, 8506.0*cm + 547*cm}, //layer 5
- 													{8606.0*cm + 547*cm, 8609.0*cm + 547*cm}, //layer 6
- 													{8709.0*cm + 547*cm, 8712.0*cm + 547*cm}, //layer 7
- 													{8812.0*cm + 547*cm, 8815.0*cm + 547*cm}, //layer 8
-													{8915.0*cm + 547*cm, 8918.0*cm + 547*cm}};  //layer 9*/
+const std::vector<std::vector<double>> MODULE_X = {{-1950.0*cm,-1050.0*cm},
+{-950.0*cm,-50.0*cm},
+{50.0*cm,950.0*cm},
+{1050.0*cm,1950.0*cm},
+};
 
-
-	const std::vector<std::vector<double>> MODULE_X = { 	{-4950.0*cm, -4050.0*cm},
-													{-3950.0*cm, -3050.0*cm},
-													{-2950.0*cm, -2050.0*cm},
-													{-1950.0*cm, -1050.0*cm},
-													{-950.0*cm, -50.0*cm},
-													{50.0*cm, 950.0*cm},
-													{1050.0*cm, 1950.0*cm},
-													{2050.0*cm, 2950.0*cm},
-													{3050.0*cm,  3950.0*cm},
-													{4050.0*cm,  4950.0*cm} };
-
-	const std::vector<std::vector<double>> MODULE_Z = {{7000.0*cm, 7900.0*cm},
-													{8000.0*cm, 8900.0*cm},
-													{9000.0*cm, 9900.0*cm},
-													{10000.0*cm, 10900.0*cm},
-													{11000.0*cm, 11900*cm},
-													{12000.0*cm, 12900.0*cm},
-													{13000.0*cm, 13900.0*cm},
-													{14000.0*cm, 14900.0*cm},
-													{15000.0*cm, 15900.0*cm},
-													{16000.0*cm, 16900.0*cm} };
+const std::vector<std::vector<double>> MODULE_Z = {{7000.0*cm,7900*cm},
+{8000.0*cm,8900.0*cm},
+{9000.0*cm,9900.0*cm},
+{10000.0*cm,10900.0*cm},
+};
 
 	const std::vector<double> COSMIC_SHIFT = {0.0, 547*cm, 11950.0*cm}; // shift of sim cosmic -> main coordinates
 	const double surface_height = 8547*units::cm;
 
-	const int n_modules = 100;
+const int n_modules = 16;
 	const double scintillator_length = 450.0*units::cm;
 	const double scintillator_width = 4.50*units::cm;
-	const double scintillator_height = 2.6*units::cm;
-	const double scintillator_thickness = 2.0*units::cm; //Just the sensitive part
+const double scintillator_height = 1.6*units::cm;
+const double scintillator_thickness = 1.0*units::cm; //Just the sensitive part
 	const double time_resolution = 1.0*units::ns;
 
 	// 2023-04-25: changing to 6 TOP layers. Numbers updated from simulation by print. 
-	const std::vector<std::vector<double>> LAYERS_Y={{6547.3*cm - 0.3*cm, 6549.3*cm + 0.3*cm},
-													 {6629.9*cm - 0.3*cm, 6631.9*cm + 0.3*cm},
-													 {8547.3*cm - 0.3*cm, 8549.3*cm + 0.3*cm},
-													 {8629.9*cm - 0.3*cm, 8631.9*cm + 0.3*cm},
-													 {9132.5*cm - 0.3*cm, 9134.5*cm + 0.3*cm},
-													 {9215.1*cm - 0.3*cm, 9217.1*cm + 0.3*cm},
-													 {9297.7*cm - 0.3*cm, 9299.7*cm + 0.3*cm},
-													 {9380.3*cm - 0.3*cm, 9382.3*cm + 0.3*cm},
-													 {9462.9*cm - 0.3*cm, 9464.9*cm + 0.3*cm},
-													 {9545.5*cm - 0.3*cm, 9547.5*cm + 0.3*cm}};
+const std::vector<std::vector<double>> LAYERS_Y={{8550.0*cm,8551.6*cm},
+{8631.6*cm,8633.2*cm},
+{9893.2*cm,9894.8*cm},
+{9974.8*cm,9976.4*cm},
+{10056.4*cm,10058.0*cm},
+{10138.0*cm,10139.6*cm},
+};
 
 	const int n_layers = LAYERS_Y.size();
 
@@ -106,9 +81,9 @@ namespace detector{
 
     //WALL PARAMETERS
 
-    const double wall_gap = 1.0*units::cm; //gap on each side of wall
-    const double wall_gap2 = 100.0*units::cm; //gap between two walls
-    const double wall_height = 2600.0*units::cm;
+const double wall_gap = 1.0*units::cm; //gap on each side of wall
+const double wall_gap2 = 100.0*units::cm; //gap between two walls
+const double wall_height = 1343.2*units::cm;
     const double wall_start_y = y_min - 3*units::cm; //min y value of wall (casing included)
 
     //FOR statistics.hh ONLY - NEW MIN Z WITH WALL

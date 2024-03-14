@@ -313,8 +313,8 @@ public:
 		auto max_y = detector::LAYERS_Y[detector::n_layers-1][1];
 
 		for (int _index = 0; _index < detector::n_modules; _index++){
-			int _x = _index % 10;
-			int _z = (_index - _x)/10;
+			int _x = _index % detector::MODULE_X.size();
+			int _z = (_index - _x)/ detector::MODULE_Z.size();
 			module_list.push_back(new Module(detector::MODULE_X[_x][0], detector::MODULE_X[_x][1], min_y, max_y, detector::MODULE_Z[_z][0], detector::MODULE_Z[_z][1]));
 			module_list[_index]->SetIndex(_index);
 		}
