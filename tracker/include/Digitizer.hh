@@ -33,7 +33,6 @@ public:
 	Geometry* _geometry;
 
 	void AddHit(physics::sim_hit *hit){
-		hit->det_id = (_geometry->GetDetID(hit));
 		if (!hit->det_id.IsNull()) {
 			hits.push_back(hit);
 		}

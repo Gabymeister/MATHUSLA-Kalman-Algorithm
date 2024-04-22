@@ -227,8 +227,10 @@ public:
 class detID{
 public:
 	int moduleIndex;
+	int xModule;
+	int xIndex
 	int layerIndex;
-	int xIndex;
+	int zModule;
 	int zIndex;
 	bool _null = false;
 	bool isFloorElement = false;
@@ -253,14 +255,44 @@ public:
 	detID(int _module_index, int _layer_index, int _x_index, int _z_index, bool _isFloorElement = false,
             bool _isWallElement = false, int _wall_y_index = 0){
 		moduleIndex = _module_index;
+		xModule = _module_index % sqrt(detector::n_modules);
+		zModule = int(module_index / sqrt(detector::n_modules);
 		layerIndex = _layer_index;
 		xIndex = _x_index;
 		zIndex = _z_index;
-		_null = false; // could be ==? used to be, thought it was weird, took it out.
+		_null = false;
 		isFloorElement = _isFloorElement;
         isWallElement = _isWallElement;
         wall_yIndex = _wall_y_index;
 	}
+
+	detID(double fullIndex) {
+		zIndex = fullIndex % 1000;
+		fullIndex = std::floor(fullIndex / 1000);
+		zModule = fullIndex % 100;
+		fullIndex = std::floor(fullIndex / 100);
+		layerIndex = fullIndex % 1000;
+		fullIndex = std::floor(fullIndex / 1000);
+		xIndex = fullIndex % 1000;
+		fullIndex = std::floor(fullIndex / 1000);
+		xModule = fullIndex % 100;
+		_null = false;
+		isWallElement = false;
+		isFloorElement = false;	
+		if (zModule < 2) { //2 front walls
+			wall_yIndex = layerIndex;
+			isWallElement = true;
+		}		
+		else if (zModule < 2 + sqrt(detector::nModules)) {//Main detector
+			if (layerIndex < 2) isFloorElement = true;
+		}
+		else { // Back walls
+			isWallElement = true; 	
+			wall_yIndex = layerIndex;
+		}	
+		moduleIndex = zModule * sqrt(detector::nModules) + xModule;
+	}
+
 
 	bool IsNull(){return _null;}
 
@@ -272,6 +304,7 @@ public:
 		if (isFloorElement){
 			if (xIndex != detID2.xIndex) return false;
 			if (zIndex != detID2.zIndex) return false;
+			if (layerIndex != detID2.layerIndex) return false;
 			return true;
 		}
         if (isWallElement) {
