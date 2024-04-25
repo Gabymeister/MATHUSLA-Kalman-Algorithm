@@ -23,8 +23,8 @@ void TrackFinder::Seed()
 		for (int second = first + 1; second < hits_k.size(); second++)
 		{
 
-			int layer1 = ((hits_k[first])->det_id).layerIndex;
-			int layer2 = ((hits_k[second])->det_id).layerIndex;
+			int layer1 = ((hits_k[first])->det_id).yModule;
+			int layer2 = ((hits_k[second])->det_id).yModule;
 
 			if (layer1 == layer2)
 				continue;

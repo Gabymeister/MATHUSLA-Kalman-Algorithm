@@ -48,6 +48,7 @@ if(noise_hz>0){
 	layer_detIDs(detID_list);
 	wall_detIDs(detID_list);
 	floor_detIDs(detID_list);
+	back_detIDs(detID_list);
 
 	detID_q = detID_list.size();
 	double average_hits = window*rate_of_hits*detID_q;
@@ -177,11 +178,10 @@ void NoiseMaker::make_digis(std::vector<double> times, detID id){
 	digi->x = location[0];
 	digi->y = location[1];
 	digi->z = location[2];
-	int layer_index = id.layerIndex;
-	auto layer = _geometry->layer_list[layer_index];
-	auto uncertainty = layer->uncertainty();
-	digi->ey = uncertainty[1];
+	int layer_index = id.yModule;;
+	auto uncertainty = id.uncertainty();
 	digi->ex = uncertainty[0];
+	digi->ey = uncertainty[1];
 	digi->ez = uncertainty[2];
 	//dummy variables
 	digi->e = 999;
@@ -200,23 +200,24 @@ void NoiseMaker::make_digis(std::vector<double> times, detID id){
 //------------------------------------------------------------------//
 
 std::vector<double> NoiseMaker::set_hit_location(detID id){
-std::vector<double> location = {0,0,0};
-location = _geometry->GetCenter(id);
+    std::vector<double> location = {0,0,0};
+    location = _geometry->GetCenter(id);
 
-int layer_index =id.layerIndex;//only modify hit location for regular layers, all others leave as center
-        if(layer_index >= 3){ //is regular layer detID
-                auto layer = _geometry->layer_list[layer_index];
-                std::vector<double> layer_widths = layer->widths();
-                int long_direction_index = layer->long_direction_index; //if 0 along x if 1 along z
-                double length = layer_widths[long_direction_index];
-                double randomlength = hit_generator.Uniform(-length/2, length/2);
-                if(long_direction_index ==0){//length along x
-                        location[0]+=randomlength;
-                }
-                else{//length along z
-                        location[2]+=randomlength;
-                }
-        }
+    int layer_index =id.yModule;//only modify hit location for regular layers, all others leave as center
+    if(layer_index >= detector::n_floors){ //is regular layer detID
+        std::vector<double> layer_widths = _geometry->GetDimensions(id);
+        int long_direction_index = id.GetLongIndex(); //if 0 along x if 1 along z
+	double length;
+	if (long_direction_index == 0) length = layer_widths[0];
+	else length = layer_widths[2];
+            double randomlength = hit_generator.Uniform(-length/2, length/2);
+            if(long_direction_index ==0){//length along x
+                location[0]+=randomlength;
+            }
+            else{//length along z
+                location[2]+=randomlength;
+            }
+    }
 if(location == std::vector<double> {0,0,0}){std::cout<<"location is unmodified for a detID"<<std::endl;}
 return location;
 }
@@ -224,78 +225,101 @@ return location;
 //------------------------------------------------------------------//
 
 void NoiseMaker::layer_detIDs(std::vector<detID>& _detID_list){
-if(ts) std::cout<<"NoiseMaker::layer_detIDs"<<std::endl;
-int layerids = 0;
-for (auto layer : _geometry->layer_list){
-                int layer_index = layer->index;
-                if(layer_index < 3 ){continue;} //ensure layers aren't floor layers
-                for (auto module : _geometry->module_list){
-			int module_index = module->index;
-                        if(module_index != -1){
-                        	std::vector<double> layer_widths = layer->widths();
-                                std::vector<double> det_size = {module->xmax - module->xmin,module->zmax - module->zmin};
-                                int x_module_quantity = static_cast<size_t>(std::floor(det_size[0]/layer_widths[0]));
-                                int z_module_quantity = static_cast<size_t>(std::floor(det_size[1]/layer_widths[1]));
-                                for(int x_module =-(x_module_quantity/2); x_module< (x_module_quantity/2); x_module++){
-                                        for(int z_module = -(z_module_quantity/2); z_module < (z_module_quantity/2); z_module ++){
-						detID _id=detID(module_index,layer_index,x_module,z_module); 
-						if(_id._null){_id.Print();} else{_detID_list.push_back(_id);layerids+=1; }
-                                        }
-                                }
-                        }
-               }
-
+    if(ts) std::cout<<"NoiseMaker::layer_detIDs"<<std::endl;
+    int layerids = 0;
+    for (int yModule = 0; yModule < detector::LAYERS_Y.size(); yModule++){
+        if(yModule < 2 ){continue;} //ensure layers aren't floor layers
+        for (int xModule = 0; detector::MODULE_X.size(); xModule++){
+	    for (int zModule = 0; detector::MODULE_Z.size(); zModule++){
+	        double length = detector::MODULE_X[0][1] - detector::MODULE_X[0][0];
+		int num_x, num_z;
+		if (yModule % 2 == 0) {
+		   num_x = (int)(length / detector::scintillator_length);
+		   num_z = (int)(length / detector::scintillator_width);
+		} else {
+		   num_x = (int)(length / detector::scintillator_width);
+		   num_z = (int)(length / detector::scintillator_length);
+		}
+		for (int xIndex = 0; xIndex < num_x; xIndex++) {
+		    for (int zIndex = 0; zIndex < num_z; zIndex++) {
+		        detID _id = detID(xModule, xIndex, yModule, 0, zModule + detector::n_walls, zIndex);
+			_detID_list.push_back(_id);
+		    }
+		}
+	    }
         }
+    }
+}
 
+//------------------------------------------------------------------//
+
+void NoiseMaker::back_detIDs(std::vector<detID>& _detID_list){
+    if(ts) std::cout<<"NoiseMaker::layer_detIDs"<<std::endl;
+    for (int zModule = 0; zModule < detector::n_back_walls; zModule++){
+        for (int xModule = 0; detector::MODULE_X.size(); xModule++){
+	    double length = detector::MODULE_X[0][1] - detector::MODULE_X[0][0];
+	    int num_x, num_y;
+	    if (zModule % 2 == 0) {
+		num_x = (int)(length / detector::scintillator_length);
+		num_y = (int)(length / detector::scintillator_width);
+	    } else {
+		num_x = (int)(length / detector::scintillator_width);
+		num_y = (int)(length / detector::scintillator_length);
+	    }
+	    for (int xIndex = 0; xIndex < num_x; xIndex++) {
+		for (int yIndex = 0; yIndex < num_y; yIndex++) {
+		    detID _id = detID(xModule, xIndex, 0, yIndex, zModule + detector::MODULE_Z.size() + detector::n_walls, 0);
+		    _detID_list.push_back(_id);
+		}
+	    }
+        }
+    }
 }
 
 //------------------------------------------------------------------//
 
 void NoiseMaker::wall_detIDs(std::vector<detID>& _detID_list){
-if(ts) std::cout<<"NoiseMaker::wall_detIDs"<<std::endl;
-int wallids = 0;
-int module_index = -1;
-bool isWallElement = true;
-int layer_index = 0;
-Wall _wall = _geometry->_wall;
-
-int x_index_q=static_cast<size_t>(std::floor((detector::x_max-detector::x_min)/_wall.x_width));//number of detectors in x direction
-int y_index_q= static_cast<size_t>(std::floor(detector::wall_height/_wall.y_width));//number of detectors in y direction
-
-for(int x_index =-(x_index_q/2) ; x_index<(x_index_q/2); x_index++){
-	for(int y_index = -(y_index_q/2); y_index<(y_index_q/2); y_index++){
-		detID _id=detID(module_index, layer_index,x_index, 0, false,isWallElement, y_index);
-		if(_id._null){_id.Print();} else{_detID_list.push_back(_id);wallids+=1; }		
+    if(ts) std::cout<<"NoiseMaker::wall_detIDs"<<std::endl;
+    for (int zModule = 0; zModule < detector::n_walls; zModule++){
+        double length = detector::MODULE_X[0][1] - detector::MODULE_X[0][0];
+	int num_x, num_y;
+	if (zModule % 2 == 0) {
+	    num_x = (int)(length / detector::scintillator_length);
+	    num_y = (int)(length / detector::scintillator_width);
+	} else {
+	    num_x = (int)(length / detector::scintillator_width);
+	    num_y = (int)(length / detector::scintillator_length);
 	}
-}
-
+	for (int xIndex = 0; xIndex < num_x; xIndex++) {
+	    for (int yIndex = 0; yIndex < num_y; yIndex++) {
+	        detID _id = detID(0, xIndex, 0, yIndex, zModule, 0);
+	        _detID_list.push_back(_id);
+	    }
+        }
+    }
 }
 
 //------------------------------------------------------------------//
 
 void NoiseMaker::floor_detIDs(std::vector<detID>& _detID_list){
-if(ts) std::cout<<"NoiseMaker::floor_detIDs"<<std::endl;
-int floorids = 0;
-for (auto layer : _geometry->layer_list){
-	int layer_index = layer->index;
-	Floor _floor = _geometry->_floor;
-	if(ts)std::cout<<"layer_index: "<<layer_index<<std::endl;
-	int isFloorElement = true;
-	int module_index = -1;//indicates no module 
-	if(layer_index > 2){continue;}
-	if(cuts::include_floor[layer_index] != true){continue;}
-	int x_index_q= static_cast<size_t>(std::floor(( detector::x_max-detector::x_min)/_floor.x_width));
-	int z_index_q= static_cast<size_t>(std::floor((detector::z_max-detector::z_min)/_floor.z_width));
-	for(int x_index=-(x_index_q/2); x_index< (x_index_q/2); x_index++){
-		for(int z_index = -(z_index_q/2); z_index < (z_index_q/2); z_index++){
-			detID _id=detID(module_index, layer_index,x_index, z_index,isFloorElement);
-			if(_id._null){_id.Print();} else{_detID_list.push_back(_id);floorids+=1;}
-		}
+    if(ts) std::cout<<"NoiseMaker::floor_detIDs"<<std::endl;
+    for (int yModule = 0; yModule < detector::n_floors; yModule++){
+        double length = detector::MODULE_X[0][1] - detector::MODULE_X[0][0];
+	int num_x, num_z;
+	if (yModule % 2 == 0) {
+	    num_x = (int)(length / detector::scintillator_length);
+	    num_z = (int)(length / detector::scintillator_width);
+	} else {
+	    num_x = (int)(length / detector::scintillator_width);
+	    num_z = (int)(length / detector::scintillator_length);
 	}
-	
-
-}
-
+	for (int xIndex = 0; xIndex < num_x; xIndex++) {
+	    for (int zIndex = 0; zIndex < num_z; zIndex++) {
+	        detID _id = detID(0, xIndex, yModule, 0, detector::n_walls, zIndex);
+	        _detID_list.push_back(_id);
+	    }
+        }
+    }
 }
 
 //------------------------------------------------------------------//

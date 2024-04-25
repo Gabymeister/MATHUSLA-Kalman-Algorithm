@@ -119,7 +119,7 @@ seed kalman_track::choose_seed(seed *current_seed)
     physics::digi_hit* first_hit = layer_hits[layers[0]][0];
     physics::digi_hit* second_hit = layer_hits[layers.end()[-1]][0];
 
-    if(first_hit->det_id.layerIndex%2 == second_hit->det_id.layerIndex%2){
+    if(first_hit->det_id.yModule%2 == second_hit->det_id.yModule%2){
       second_hit = layer_hits[layers.end()[-2]][0];
     }
 
@@ -262,7 +262,7 @@ void kalman_track::find_first()
 
   // layers index of first_hit_list (times two to account for spaces between layers)
   if (seed_was_used)
-    start_ind = det_ind_to_layers[(first_hit_list[0]->det_id).layerIndex];
+    start_ind = det_ind_to_layers[(first_hit_list[0]->det_id).yModule];
   else
     start_ind = det_ind_to_layers[seed_layer];
 

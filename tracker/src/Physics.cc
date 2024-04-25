@@ -118,7 +118,7 @@ namespace physics {
     	std::vector<int> layer_indices;
     	for (auto hit : hits){
     		bool new_layer = true;
-    		int layer_index = hit->det_id.layerIndex;
+    		int layer_index = hit->det_id.yModule;
     		for (int layer_n : layer_indices){
     			if (layer_n == layer_index){
     				new_layer = false;

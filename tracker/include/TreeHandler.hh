@@ -88,7 +88,13 @@ public:
 		InputTree->SetBranchAddress("NumHits", &sim_numhits);
  		InputTree->SetBranchAddress("Hit_energy", &sim_hit_e);
  		InputTree->SetBranchAddress("Hit_time", &sim_hit_t);
- 		InputTree->SetBranchAddress("Hit_detId", &sim_hit_detId);
+ 		InputTree->SetBranchAddress("Hit_xMod", &sim_hit_xMod); 
+ 		InputTree->SetBranchAddress("Hit_xIndex", &sim_hit_xIndex);
+ 		InputTree->SetBranchAddress("Hit_yMod", &sim_hit_yMod);
+ 		InputTree->SetBranchAddress("Hit_yIndex", &sim_hit_yIndex);
+ 		InputTree->SetBranchAddress("Hit_zMod", &sim_hit_zMod);
+ 		InputTree->SetBranchAddress("Hit_zIndex", &sim_hit_zIndex);
+
  		InputTree->SetBranchAddress("Hit_particlePdgId", &sim_hit_particlePdgId);
  		InputTree->SetBranchAddress("Hit_G4TrackId", &sim_hit_G4TrackId);
  		InputTree->SetBranchAddress("Hit_G4ParentTrackId", &sim_hit_G4ParentTrackId);
@@ -162,7 +168,12 @@ public:
 		OutputTree->Branch("NumHits", &sim_numhits);
 		OutputTree->Branch("Hit_energy", "std::vector<double>", sim_hit_e);
  		OutputTree->Branch("Hit_time", "std::vector<double>", sim_hit_t);
- 		OutputTree->Branch("Hit_detId", "std::vector<double>", sim_hit_detId);
+ 		OutputTree->Branch("Hit_xMod", "std::vector<double>", sim_hit_xMod);
+ 		OutputTree->Branch("Hit_xIndex", "std::vector<double>", sim_hit_xIndex);
+ 		OutputTree->Branch("Hit_yMod", "std::vector<double>", sim_hit_yMod);
+ 		OutputTree->Branch("Hit_yIndex", "std::vector<double>", sim_hit_yIndex);
+ 		OutputTree->Branch("Hit_zMod", "std::vector<double>", sim_hit_zMod);
+ 		OutputTree->Branch("Hit_zIndex", "std::vector<double>", sim_hit_zIndex);
  		OutputTree->Branch("Hit_particlePdgId", "std::vector<double>", sim_hit_particlePdgId);
  		OutputTree->Branch("Hit_G4TrackId", "std::vector<double>", sim_hit_G4TrackId);
  		OutputTree->Branch("Hit_G4ParentTrackId", "std::vector<double>", sim_hit_G4ParentTrackId);
@@ -319,7 +330,12 @@ public:
  	Double_t sim_numhits;
  	std::vector<double> *sim_hit_e = nullptr;
  	std::vector<double> *sim_hit_t = nullptr;
- 	std::vector<double> *sim_hit_detId = nullptr;
+ 	std::vector<double> *sim_hit_xMod = nullptr; 
+ 	std::vector<double> *sim_hit_yMod = nullptr; 
+ 	std::vector<double> *sim_hit_zMod = nullptr; 
+ 	std::vector<double> *sim_hit_xIndex = nullptr;
+ 	std::vector<double> *sim_hit_yIndex = nullptr;
+ 	std::vector<double> *sim_hit_zIndex = nullptr;
  	std::vector<double> *sim_hit_particlePdgId = nullptr;
  	std::vector<double> *sim_hit_G4TrackId = nullptr;
  	std::vector<double> *sim_hit_G4ParentTrackId = nullptr;
@@ -515,7 +531,7 @@ void TreeHandler::ExportDigis(std::vector<digi_hit*> digi_list, long long int se
         digi_particle_energy.push_back(digi->particle_energy);
         digi_pdg.push_back(digi->pdg);
 		digi_track_id.push_back(digi->min_track_id);
-		digi_layer_id.push_back(digi->det_id.layerIndex);
+		digi_layer_id.push_back(digi->det_id.yModule);
         for (auto hit : digi->hits){
           digi_hit_indices.push_back(hit->index);
         }

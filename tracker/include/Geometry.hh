@@ -6,236 +6,18 @@
 #ifndef GEOMETRY_HH
 #define GEOMETRY_HH
 
-class Layer  {
-public:
-	int index;
-	double min;
-	double max;
-	double center;
-	int long_direction_index;
-	int short_direction_index;
-
-	//the uncertainty along each directiion in the layer
-	std::vector<double> widths(){
-		if ( (index % 2 ) == 1){
-			return { detector::scintillator_width, detector::scintillator_length };
-		}
-
-		return {  detector::scintillator_length, detector::scintillator_width  };
-	}
-	std::vector<double> uncertainty(){
-		if ( (index % 2 ) == 1){
-			return { detector::scintillator_width/sqrt(12.), detector::scintillator_thickness/sqrt(12.),
-                detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2) };
-		}
-
-		//return {  detector::time_resolution * (constants::c/constants::optic_fiber_n)/ sqrt(2), (max-min)/sqrt(12.), detector::scintillator_width/sqrt(12.) };
-		return {  detector::time_resolution * (constants::c/constants::optic_fiber_n)/ sqrt(2), detector::scintillator_thickness/sqrt(12.), detector::scintillator_width/sqrt(12.) };
-
-	}
-
-	Layer(int _index, double _min, double _max){
-		index = _index;
-		min = _min;
-		max = _max;
-		center = (min + max)/2.0;
-
-		if (index % 2 == 1){
-			short_direction_index = 0;
-			long_direction_index = 1;
-		} else {
-			short_direction_index = 1;
-			long_direction_index = 0;
-		}
-	}
-
-	bool in_layer(double y){
-		if (y > min and y < max) return true;
-		return false;
-	 }
-
-};
-
-class Module{
-public:
-	double cx, cy, cz; //center point
-	double xmin, ymin, zmin;
-	double xmax, ymax, zmax;
-	int index;
-	std::vector<Layer*> layers;
-	void SetLayers(std::vector<Layer*> _layers){layers = _layers;}
-	void SetIndex(int _index){index = _index;}
-
-	std::vector<double> LocalPosition(double x, double y, double z){
-		return {x-cx, y-cy, z-cz};
-	}
-
-
-	Module(double _xmin, double _xmax, double _ymin, double _ymax, double _zmin, double _zmax){
-		xmin = _xmin;
-		xmax = _xmax;
-		ymin = _ymin;
-		ymax = _ymax;
-		zmin = _zmin;
-		zmax = _zmax;
-
-		cx = (xmin + xmax)/2.00;
-		cy = (ymin + ymax)/2.00;
-		cz = (zmin + zmax)/2.00;
-
-	}
-
-	bool is_inside(double x, double y, double z){
-		if ( !(x > xmin and x < xmax ) ) return false;
-		if ( !(y > ymin and y < ymax ) ) return false;
-		if ( !(z > zmin and z < zmax ) ) return false;
-		return true;
-	}
-};
-
-class Floor {
-public:
-	double cx = (detector::x_min + detector::x_max)/2.0;
-	double cz = (detector::z_min + detector::z_max)/2.0;
-	double cy_0 = (detector::LAYERS_Y[0][1] + detector::LAYERS_Y[0][0])/2.0;
-	double cy_1 = (detector::LAYERS_Y[1][1] + detector::LAYERS_Y[1][0])/2.0;
-	// double cy_2 = (detector::LAYERS_Y[2][1] + detector::LAYERS_Y[2][0])/2.0;
-	double xmin, ymin, zmin;
-	double xmax, ymax, zmax;
-	double x_width = detector::floor_x_width; //scintillator_length
-	double z_width = detector::floor_z_width;
-
-
-	std::vector<int> GetFloorIndex(double x, double y, double z){
-		double local_x = x - cx;
-		//double local_y = y - cy;
-		double local_z = z - cz;
-
-		// return { (int)(std::floor( local_x/x_width )),  (int)(std::floor( local_z/z_width ))   };
-		if (y>detector::LAYERS_Y[0][0] && y<detector::LAYERS_Y[0][1])
-        	return { (int)(std::floor( local_x/x_width )), (int)(std::floor( local_z/z_width ))};
-		else
-        	return { (int)(std::floor( local_x/z_width )), (int)(std::floor( local_z/x_width ))};
-	}		
-
-
-	template<typename _detID_>
-	std::vector<double> GetCenter(_detID_ id){
-		if (!id.isFloorElement) {
-			std::cout << "Not floor element!" << std::endl;
-			return {};
-		}
-
-		double x_local;
-		double z_local;
-		if (id.layerIndex == 0) // First (Leftmost) wall
-		{
-			x_local = x_width*(static_cast<double>(id.xIndex) + 0.5);
-			z_local = z_width*(static_cast<double>(id.zIndex) + 0.5);
-			return {cx + x_local, cy_0, cz + z_local};
-		}
-		else if (id.layerIndex == 1) // Second wall		
-		{
-			x_local = z_width*(static_cast<double>(id.xIndex) + 0.5);
-			z_local = x_width*(static_cast<double>(id.zIndex) + 0.5);
-			return {cx + x_local, cy_1, cz + z_local};
-		}		
-
-		return {};
-
-	}
-
-	std::vector<double> uncertainty(int y_index){
-		if (y_index == 0) {
-			return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
-		} else if (y_index == 1) {
-			return {detector::scintillator_thickness/sqrt(12.), x_width/sqrt(12.0), z_width/sqrt(12)};
-		} //else if (y_index == 2) {
-		// 	return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
-		// }
-
-		return {-999,-999,-999};
-	}
-};
-
-class Wall {
-public:
-	double cx = (detector::x_min + detector::x_max)/2.0;
-	double cz2 = (detector::z_min - detector::wall_gap - detector::scintillator_height/2.0);
-	double cz1 = (detector::z_min - detector::wall_gap -detector::wall_gap2 - detector::scintillator_height*1.5);
-	double cy = (detector::y_min + detector::wall_height/2.0);
-	double xmin, ymin, zmin;
-	double xmax, ymax, zmax;
-	double x_width = detector::wall_x_width;
-	double y_width = detector::wall_y_width;
-
-
-	std::vector<int> GetWallIndex(double x, double y, double z){
-		double local_x = x - cx;
-		double local_y = y - cy;
-		// double local_z = z - cz;
-
-		if (z<detector::z_min - detector::wall_gap2)
-        	return { (int)(std::floor( local_x/x_width )),  (int)(std::floor( local_y/y_width )), 0};
-		else
-        	return { (int)(std::floor( local_x/y_width )),  (int)(std::floor( local_y/x_width )), 1};
-	}
-
-	template<typename _detID_>
-	std::vector<double> GetCenter(_detID_ id){
-		if (!id.isWallElement) {
-			std::cout << "Not wall element!" << std::endl;
-			return {};
-		}
-
-		double x_local;
-		double y_local;
-		double cz;
-		if (id.zIndex == 0) // First (Leftmost) wall
-		{
-			x_local = x_width*(static_cast<double>(id.xIndex) + 0.5);
-			y_local = y_width*(static_cast<double>(id.wall_yIndex) + 0.5);
-			cz = cz1;
-		}
-		else if (id.zIndex == 1) // Second wall		
-		{
-			x_local = y_width*(static_cast<double>(id.xIndex) + 0.5);
-			y_local = x_width*(static_cast<double>(id.wall_yIndex) + 0.5);
-			cz = cz2;
-		}
-
-		return { cx + x_local, cy + y_local, cz };		
-	}
-
-	std::vector<double> uncertainty(int z_index = 0){
-        // return { x_width/sqrt(12.0), y_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.0) };
-
-		if (z_index == 0) {
-			return {x_width/sqrt(12.0), detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2), detector::scintillator_thickness/sqrt(12.)};
-		} else if (z_index == 1) {
-			return {detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2), x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.)};
-		} //else if (y_index == 2) {
-		// 	return {x_width/sqrt(12.0), detector::scintillator_thickness/sqrt(12.), z_width/sqrt(12)};
-		// }
-
-		return {-999,-999,-999};		
-	}
-};
-
-
-
 class detID{
 public:
-	int moduleIndex;
 	int xModule;
-	int xIndex
-	int layerIndex;
+	int xIndex;
+	int yModule;
+	int yIndex;
 	int zModule;
 	int zIndex;
 	bool _null = false;
 	bool isFloorElement = false;
-    bool isWallElement = false;
-    int wall_yIndex = 0;
+    	bool isWallElement = false;
+	bool isBackElement = false;
 
 	detID(){_null = true;}
 
@@ -246,211 +28,226 @@ public:
 			std::cout << "NOT IN KNOWN DETECTOR ELEMENT" << std::endl;
 			return;
 		}
-		std::cout << "Module Index: " << moduleIndex << std::endl;
-		std::cout << "Layer Index: " << layerIndex << std::endl;
+		std::cout << "xModule: " << xModule << std::endl;
+		std::cout << "yModule: " << yModule << std::endl;
+		std::cout << "zModule: " << zModule << std::endl;
 		std::cout << "x Index: " << xIndex << std::endl;
+		std::cout << "y Index: " << yIndex << std::endl;
 		std::cout << "z Index: " << zIndex << std::endl;
 	}
 
-	detID(int _module_index, int _layer_index, int _x_index, int _z_index, bool _isFloorElement = false,
-            bool _isWallElement = false, int _wall_y_index = 0){
-		moduleIndex = _module_index;
-		xModule = _module_index % sqrt(detector::n_modules);
-		zModule = int(module_index / sqrt(detector::n_modules);
-		layerIndex = _layer_index;
+	detID(int _xModule, int _x_index, int _yModule, int _y_index, int _zModule, int _z_index){
+	    	xModule = _xModule;
+		yModule = _yModule;
+		zModule = _zModule;
 		xIndex = _x_index;
+		yIndex = _y_index;
 		zIndex = _z_index;
 		_null = false;
-		isFloorElement = _isFloorElement;
-        isWallElement = _isWallElement;
-        wall_yIndex = _wall_y_index;
-	}
-
-	detID(double fullIndex) {
-		zIndex = fullIndex % 1000;
-		fullIndex = std::floor(fullIndex / 1000);
-		zModule = fullIndex % 100;
-		fullIndex = std::floor(fullIndex / 100);
-		layerIndex = fullIndex % 1000;
-		fullIndex = std::floor(fullIndex / 1000);
-		xIndex = fullIndex % 1000;
-		fullIndex = std::floor(fullIndex / 1000);
-		xModule = fullIndex % 100;
-		_null = false;
-		isWallElement = false;
-		isFloorElement = false;	
-		if (zModule < 2) { //2 front walls
-			wall_yIndex = layerIndex;
-			isWallElement = true;
-		}		
-		else if (zModule < 2 + sqrt(detector::nModules)) {//Main detector
-			if (layerIndex < 2) isFloorElement = true;
+		//Setting floor/wall/back
+		//NOTE: Only checks range!
+		if (_zModule < 2) isWallElement = true;//2 walls
+		else if (_yModule < 2) isFloorElement = true; //2 floors
+		else if (_zModule > 2 + detector::MODULE_Z.size()) isBackElement = true;
+		else {//main detector layers
+			isFloorElement = false;
+        		isWallElement = false;
+			isBackElement = false;
 		}
-		else { // Back walls
-			isWallElement = true; 	
-			wall_yIndex = layerIndex;
-		}	
-		moduleIndex = zModule * sqrt(detector::nModules) + xModule;
 	}
+	
 
-
-	bool IsNull(){return _null;}
 
 	bool operator==(const detID &detID2){
 		if (_null) return false;
 		if (isFloorElement != detID2.isFloorElement) return false;
         if (isWallElement != detID2.isWallElement) return false;
         
-		if (isFloorElement){
-			if (xIndex != detID2.xIndex) return false;
-			if (zIndex != detID2.zIndex) return false;
-			if (layerIndex != detID2.layerIndex) return false;
-			return true;
-		}
+	if (isFloorElement){
+		if (xIndex != detID2.xIndex) return false;
+		if (zIndex != detID2.zIndex) return false;
+		if (yModule != detID2.yModule) return false;
+		return true;
+	}
         if (isWallElement) {
             if (xIndex != detID2.xIndex) return false;
-            if (wall_yIndex != detID2.wall_yIndex) return false;
-            if (zIndex != detID2.zIndex) return false;
+            if (yIndex != detID2.yIndex) return false;
+            if (zModule != detID2.zModule) return false;
             return true;
         }
+	if (isBackElement) {
+	    if (zModule != detID2.zModule) return false;
+	    if (xModule != detID2.xModule) return false;
+	    if (xIndex != detID2.xIndex) return false;
+	    if (yIndex != detID2.yIndex) return false;
+	}
 
-		if (moduleIndex != detID2.moduleIndex) return false;
-		if (layerIndex != detID2.layerIndex) return false;
+		if (xModule != detID2.xModule) return false;
+		if (zModule != detID2.zModule) return false;
+		if (yModule != detID2.yModule) return false;
 		if (xIndex != detID2.xIndex) return false;
 		if (zIndex != detID2.zIndex) return false;
 		return true;
+	}
+	
+	bool IsNull() { return _null; }
+
+	std::vector<double> uncertainty(){
+	    if (isWallElement || isBackElement) {//vertical layers
+	        if (zModule % 2 == 0) {
+	            return {detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2),
+		    detector::scintillator_width/sqrt(12.), detector::scintillator_thickness/sqrt(12.)};
+		} else {
+		    return {detector::scintillator_width/sqrt(12.),
+		    detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2),
+		    detector::scintillator_thickness/sqrt(12.)};
+		}
+	    } //horizontal layers
+	    if (yModule % 2 == 0){
+	        return {detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2),
+		detector::scintillator_thickness/sqrt(12.), detector::scintillator_width/sqrt(12.)};
+	    } else {
+	        return {detector::scintillator_width/sqrt(12.), detector::scintillator_thickness/sqrt(12.),
+		detector::time_resolution*(constants::c/constants::optic_fiber_n)/sqrt(2)};
+	    }
+	    return {-1., -1. -1.};
+	}
+
+	//0 implies x is long direction for both walls and layers
+	int GetLongIndex(){
+	    if (isWallElement || isBackElement) {
+	        return (zModule % 2);
+	    } else {
+	        return (yModule % 2);
+	    }
 	}
 };
 
 class Geometry{
 public:
 
-	std::vector<Module*> module_list{};
-	std::vector<Layer*> layer_list{};
+	~Geometry(){}
 
-	//Extra geometry elements here
-	Floor _floor;
-    Wall _wall;
+	//Assumes you know it is in the Floor
+	detID GetDetIDFloor(double x, double y, double z){
+	    int yModule = -1;
+	    for (int i = 0; i < detector::n_floors; i++) {
+	        if (y < detector::LAYERS_Y[i][1] && y > detector::LAYERS_Y[i][0])
+		    yModule = i; 
+	    }
 
-	Geometry(){
+	    if (yModule < 0) return detID(); //not in y_ranges
+	    if (x < detector::x_min or x > detector::x_max) return detID();
+	    if (z < detector::z_min or z > detector::z_max) return detID();
 
-		for (int _index = 0; _index < detector::n_layers; _index++ ){
-			layer_list.push_back(new Layer(_index, detector::LAYERS_Y[_index][0], detector::LAYERS_Y[_index][1]));
-
-		}
-
-
-		//CONSTRUCT MODULE LIST
-		auto min_y = detector::LAYERS_Y[0][0];
-
-		auto max_y = detector::LAYERS_Y[detector::n_layers-1][1];
-
-		for (int _index = 0; _index < detector::n_modules; _index++){
-			int _x = _index % detector::MODULE_X.size();
-			int _z = (_index - _x)/ detector::MODULE_Z.size();
-			module_list.push_back(new Module(detector::MODULE_X[_x][0], detector::MODULE_X[_x][1], min_y, max_y, detector::MODULE_Z[_z][0], detector::MODULE_Z[_z][1]));
-			module_list[_index]->SetIndex(_index);
-		}
-
-		_floor = Floor();
-
-
-
-	} //Geometry Constructor
-
-	~Geometry(){
-		for (auto p : module_list){delete p;}
-		for (auto p : layer_list){delete p;}
+	    //indexing from far corner
+	    int x_index, z_index;
+	    if (yModule % 2 == 0) {
+	        x_index = (int)((x - detector::x_min) / detector::scintillator_length); 
+		z_index = (int)((z - detector::z_min)/ detector::scintillator_width);
+	    } else {
+	        x_index = (int)((x - detector::x_min) / detector::scintillator_width); 
+		z_index = (int)((z - detector::z_min) / detector::scintillator_length);
+	    }
+	    return detID(0, x_index, yModule, 0, detector::n_walls, z_index);
 	}
 
+    	detID GetDetIDWall(double x, double y, double z) {
+	    int zModule = -1;
 
-	detID GetDetIDFloor(double x, double y, double z, int module_index = -1){
+	    for (int i = 0; i < detector::n_walls; i++) {
+	        if (z < detector::FRONT_WALL_Z[i][1] && z > detector::FRONT_WALL_Z[i][0])
+		    zModule = i; 
+	    }
 
-		// int module_index = -1;
-		bool isFloorElement = true;
+	    if (zModule < 0) return detID(); //not in wall ranges
+	    if (x < detector::x_min or x > detector::x_max) return detID();
+	    if (y < detector::wall_start_y or y > detector::wall_height + detector::wall_start_y) return detID();
 
-		if (y < detector::LAYERS_Y[0][1] && y > detector::LAYERS_Y[0][0]) {
-			int layer_number = 0;
-			std::vector<int> floor_indices = _floor.GetFloorIndex(x, y, z);
-			return detID(module_index, layer_number, floor_indices[0], floor_indices[1], isFloorElement);
-		} else if (y < detector::LAYERS_Y[1][1] && y > detector::LAYERS_Y[1][0]){
-			int layer_number = 1;
-			std::vector<int> floor_indices = _floor.GetFloorIndex(x, y, z);
-			return detID(module_index, layer_number, floor_indices[0], floor_indices[1], isFloorElement);
-		} 
-
-		return detID();
-
-	}
-
-    detID GetDetIDWall(double x, double y, double z) {
-        
-        int module_index = -1;
-        bool isWallElement = true;
-		int layer_number;
-
-		if (z<detector::z_min - detector::wall_gap2)
-        	layer_number = 20; // First (Leftmost) wall
-		else
-        	layer_number = 21; // Second wall
-
-        std::vector<int> wall_indices = _wall.GetWallIndex(x, y, z);
-        return detID(module_index, layer_number, wall_indices[0], wall_indices[2], false, isWallElement, wall_indices[1]);   
+	    //indexing from far corner
+	    int x_index, y_index;
+	    if (zModule % 2 == 0) {
+	        x_index = (int)((x - detector::x_min) / detector::scintillator_length); 
+		y_index = (int)((y - detector::wall_start_y) / detector::scintillator_width);
+	    } else {
+	        x_index = (int)((x - detector::x_min) / detector::scintillator_width); 
+		y_index = (int)((y - detector::wall_start_y) / detector::scintillator_length);
+	    }
+            return detID(0, x_index, 0, y_index, zModule, 0);   
            
-    }
+    	}
+
+	detID GetDetIDBackWall(double x, double y, double z) {
+	    int zModule = -1;
+	    int xModule = -1;
+	     
+	    for (int i = 0; i < detector::n_back_walls; i++) {
+	        if (z < detector::BACK_WALL_Z[i][1] && z > detector::BACK_WALL_Z[i][0])
+		    zModule = i + detector::MODULE_Z.size() + detector::n_walls; //z_module starts front walls 
+	    }
+	    for (int i = 0; i < detector::MODULE_X.size(); i++) {
+	        if (x < detector::MODULE_X[i][1] && x > detector::MODULE_X[i][0])
+		    xModule = i; 
+	    }
+
+	    if (zModule < 0 || xModule < 0) return detID(); //not in wall ranges
+	    if (y < detector::wall_start_y or y > detector::wall_height + detector::wall_start_y) return detID();
+
+	    //indexing from far corner
+	    int x_index, y_index;
+	    if (zModule % 2 == 0) {
+	        x_index = (int)((x - detector::MODULE_X[xModule][0]) / detector::scintillator_length); 
+		y_index = (int) ((y - detector::back_wall_bottom)/ detector::scintillator_width);
+	    } else {
+	        x_index = (int)((x - detector::MODULE_X[xModule][0]) / detector::scintillator_width); 
+		y_index = (int)((y - detector::back_wall_bottom) / detector::scintillator_length);
+	    }
+            return detID(xModule, x_index, 0, y_index, zModule, 0);   
+           
+    	}
+
+
+	detID GetDetIDTrackingLayer(double x, double y, double z) {
+	    int zModule = -1;
+	    int xModule = -1;
+	    int yModule = -1;
+	     
+	    for (int i = 0; i < detector::MODULE_Z.size(); i++) {
+	        if (z < detector::MODULE_Z[i][1] && z > detector::BACK_WALL_Z[i][0])
+		    zModule = i + detector::n_walls; //z_module starts front walls 
+	    }
+	    for (int i = 0; i < detector::MODULE_X.size(); i++) {
+	        if (x < detector::MODULE_X[i][1] && x > detector::MODULE_X[i][0])
+		    xModule = i; 
+	    }
+	    for (int i = detector::n_floors; i < detector::n_layers; i++) {
+	    	if (y < detector::LAYERS_Y[i][1] && y > detector::LAYERS_Y[i][0])
+		    yModule = i;
+	    }
+
+	    if (zModule < 0 || xModule < 0 || yModule < 0) return detID(); //not in wall ranges
+
+	    //indexing from far corner
+	    int x_index, z_index;
+	    if (yModule % 2 == 0) {
+	        x_index = (int)((x - detector::MODULE_X[xModule][0]) / detector::scintillator_length); 
+		z_index = (int)((z - detector::MODULE_Z[zModule - detector::n_walls][0])/detector::scintillator_width);
+	    } else {
+	        x_index = (int)((x - detector::MODULE_X[xModule][0]) / detector::scintillator_width); 
+		z_index = (int)((z - detector::MODULE_Z[zModule - detector::n_walls][0])/detector::scintillator_length);
+	    }
+            return detID(xModule, x_index, yModule, 0, zModule, z_index);   
+           
+    	}
 
 	detID GetDetID(double x, double y, double z){
-		int module_index = -1;
-		int layer_number = -1;
-		std::vector<double> layer_widths = {-1, -1};
 
-		// if Wall hit: return directly. No need to find module
-        if (z < detector::z_min) 
-			return GetDetIDWall(x, y, z);		
+            if (z < detector::z_min) return GetDetIDWall(x, y, z);	
+	    else if (z > detector::z_max) return GetDetIDBackWall(x,y,z);
+	    else if (y < detector::LAYERS_Y[detector::n_floors][0]) return GetDetIDFloor(x,y,z);
+	    else return GetDetIDTrackingLayer(x,y,z);
 
-		// FINDING LAYER
-		for (auto layer : layer_list){
-			if (layer->in_layer(y)){
-				layer_number = layer->index;
-				layer_widths = layer->widths();
-				break;
-			}
-		}
-		if (layer_number == -1){
-			return detID();}
-
-		// if Floor hit, Return directly. No need to find module
-		bool isFloorElement = false;
-		if(layer_number < 2){
-			isFloorElement = true;
-			return GetDetIDFloor(x, y, z);
-		}				
-
-
-		//FINDING MODULE
-		for (auto module : module_list){
-			if (module->is_inside(x, y, z)){
-				module_index = module->index;
-				break;
-			}
-		}
-		if (module_index == -1){
-			return detID();}
-
-
-
-			
-
-		// Tracker layer hit:
-		std::vector<double> local_position = (module_list[module_index])->LocalPosition(x, y, z);
-		layer_widths = layer_list[layer_number]->widths();
-
-		int x_index = static_cast<size_t>(std::floor(local_position[0]/ layer_widths[0]));
-		int z_index = static_cast<size_t>(std::floor(local_position[2]/ layer_widths[1]));
-
-		return detID(module_index, layer_number, x_index, z_index, isFloorElement);
-
-	} //GetDetID
+	}
 
 	//pointer Hit
 	template<class Hit>
@@ -468,46 +265,68 @@ public:
 	}
 
 	std::vector<double> GetCenterFloor(detID _id){
-		return _floor.GetCenter(_id);
+	    double x,y,z;
+	    y = detector::LAYERS_Y[_id.yModule][0] + detector::scintillator_height / 2;
+	    if (_id.yModule % 2 == 0) {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_length + detector::x_min;
+		z = (0.5 + _id.zIndex)*detector::scintillator_width + detector::z_min;
+	    } else {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_width + detector::x_min;
+		z = (0.5 + _id.zIndex)*detector::scintillator_length + detector::z_min;
+	    } 
+	    return {x,y,z};
 	}
 
-    std::vector<double> GetCenterWall(detID _id){
-        return _wall.GetCenter(_id);
-    }
+    	std::vector<double> GetCenterWall(detID _id){
+	    double x,y,z;
+	    z = detector::FRONT_WALL_Z[_id.zModule][0] + detector::scintillator_height / 2;
+	    if (_id.zModule % 2 == 0) {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_length + detector::x_min;
+		y = (0.5 + _id.yIndex)*detector::scintillator_width + detector::wall_start_y;
+	    } else {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_width + detector::x_min;
+		y = (0.5 + _id.yIndex)*detector::scintillator_length + detector::wall_start_y;
+	    } 
+	    return {x,y,z};
+    	}
+
+    	std::vector<double> GetCenterBackWall(detID _id){
+	    double x,y,z;
+	    int BackzIndex = _id.zModule - detector::MODULE_Z.size() - detector::n_walls;
+	    z = detector::BACK_WALL_Z[BackzIndex][0] + detector::scintillator_height / 2;
+	    if (_id.zModule % 2 == 0) {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_length + detector::MODULE_X[_id.xModule][0];
+		y = (0.5 + _id.yIndex)*detector::scintillator_width + detector::back_wall_bottom;
+	    } else {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_width + detector::MODULE_X[_id.xModule][0];
+		y = (0.5 + _id.yIndex)*detector::scintillator_length + detector::back_wall_bottom;
+	    } 
+	    return {x,y,z};
+    	}
+
+    	std::vector<double> GetCenterTrackingLayer(detID _id){
+	    double x,y,z;
+	    int TrackingzIndex = _id.zModule - detector::n_walls;
+	    y = detector::LAYERS_Y[_id.yModule][0] + detector::scintillator_height / 2;
+	    if (_id.yModule % 2 == 0) {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_length + detector::MODULE_X[_id.xModule][0];
+		z = (0.5 + _id.zIndex)*detector::scintillator_width + detector::MODULE_Z[TrackingzIndex][0];
+	    } else {
+	        x = (0.5 + _id.xIndex)*detector::scintillator_width + detector::MODULE_X[_id.xModule][0];
+		z = (0.5 + _id.zIndex)*detector::scintillator_length + detector::MODULE_Z[TrackingzIndex][0];
+	    } 
+	    return {x,y,z};
+    	}
 
 	std::vector<double> GetCenter(detID _id){
-		if (_id.IsNull()) {
-			std::cout << "detID is null" << std::endl;
-			return {};
-		}
-
-		if (_id.isFloorElement) return GetCenterFloor(_id);
-        if (_id.isWallElement) return GetCenterWall(_id);
-        
-		auto module = module_list[_id.moduleIndex];
-		auto layer = layer_list[_id.layerIndex];
-
-		std::vector<double> module_layer_center = {module->cx, layer->center, module->cz};
-		std::vector<double> widths = layer->widths();
-
-
-		module_layer_center[0] += widths[0]*static_cast<double>(_id.xIndex) + widths[0]/2.0;
-		module_layer_center[2] += widths[1]*static_cast<double>(_id.zIndex) + widths[1]/2.0;
-
-
-		if (GetDetID(module_layer_center[0], module_layer_center[1], module_layer_center[2]) == _id) return module_layer_center;
-		else{
-			std::cout << "WARNING: GEOMETRY MISMATCH! " << std::endl;
-			std::cout << "Make sure GetDetID and GetCenter(detID) are consistent!  " << std::endl;
-
-			_id.Print();
-			std::cout << "module center: " << module->cx << ", " << module->cz << std::endl;
-			std::cout << "widths : " << widths[0] << ", " << widths[1] << std::endl;
-			std::cout << "calculated: " << module_layer_center[0] << ", " << module_layer_center[2] << std::endl;
-
-
-			return module_layer_center;
-		}
+	    if (_id.IsNull()) {
+		std::cout << "detID is null" << std::endl;
+		return {};
+	    }
+	    if (_id.isWallElement) return GetCenterWall(_id);
+	    if (_id.isFloorElement) return GetCenterFloor(_id);
+	    if (_id.isBackElement) return GetCenterBackWall(_id);
+	    return GetCenterTrackingLayer(_id);
 	}
 
 
@@ -523,6 +342,25 @@ public:
 
 		return false;
 	}
+
+	std::vector<double> GetDimensions(detID _id){
+	    double x,y,z;
+	    if (_id.xModule % 2 == 0) {//x is long
+	        if (_id.isWallElement || _id.isBackElement) {//vertical layers
+		    return {detector::scintillator_length, detector::scintillator_width, detector::scintillator_thickness};
+		} else {//horizontal layers
+		    return {detector::scintillator_length, detector::scintillator_thickness, detector::scintillator_width};
+		}
+	    } else {
+	        if (_id.isWallElement || _id.isBackElement) {//vertical layers
+		    return {detector::scintillator_width, detector::scintillator_length, detector::scintillator_thickness};
+		} else {//horizontal layers
+		    return {detector::scintillator_width, detector::scintillator_thickness, detector::scintillator_length};
+		}
+	    }
+	}
+
+
 
 
 

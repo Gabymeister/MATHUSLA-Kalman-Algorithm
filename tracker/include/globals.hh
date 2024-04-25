@@ -21,7 +21,7 @@ namespace units{
 	const double MeV = 1.00;
 };
 
-namespace detector{
+namespace detector{ 
 	using namespace units;
 	const double ip_x = 0.0;
 	const double ip_y = 0.0;
@@ -44,6 +44,7 @@ const std::vector<std::vector<double>> MODULE_Z = {{7000.0*cm,7900*cm},
 	const double surface_height = 8547*units::cm;
 
 const int n_modules = 16;
+const int n_floors = 2;
 	const double scintillator_length = 450.0*units::cm;
 	const double scintillator_width = 4.50*units::cm;
 const double scintillator_height = 1.6*units::cm;
@@ -79,16 +80,28 @@ const std::vector<std::vector<double>> LAYERS_Y={{8550.0*cm,8551.6*cm},
     const double wall_x_width = scintillator_width; // 50.0*units::cm;
     const double wall_y_width = scintillator_length; // 50.0*units::cm;
 
-    //WALL PARAMETERS
+    //FRONT WALL PARAMETERS
 
 const double wall_gap = 1.0*units::cm; //gap on each side of wall
 const double wall_gap2 = 100.0*units::cm; //gap between two walls
 const double wall_height = 1343.2*units::cm;
-    const double wall_start_y = y_min - 3*units::cm; //min y value of wall (casing included)
-
+const double wall_start_y = y_min - 3*units::cm; //min y value of wall (casing included)
+const std::vector<std::vector<double>> FRONT_WALL_Z{{9895.8*cm,9897.4*cm},
+{9997.4*cm, 6999.0*cm}
+};
+const int n_walls = FRONT_WALL_Z.size();
     //FOR statistics.hh ONLY - NEW MIN Z WITH WALL
     const double z_min_wall = z_min - wall_gap - scintillator_height;
 
+    //BACK WALL PARAMETERS
+    const double back_wall_top = LAYERS_Y[0][0];
+    const double back_wall_bottom = LAYERS_Y[0][0] - (MODULE_X[0][1] - MODULE_X[0][0]); //1 module thickness down from bottom of tracking layers
+    const std::vector<std::vector<double>> BACK_WALL_Z{{13900.0*cm,13901.6*cm},
+    {13981.6*cm,13983.2*cm},
+    {14063.2*cm,14064.8*cm},
+    {14144.8*cm,14146.4*cm},
+    };
+    const double n_back_walls = BACK_WALL_Z.size();
 };
 
 namespace constants{

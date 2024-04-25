@@ -70,7 +70,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
             
             auto current_center = _geometry->GetCenter(current_id);
             if (current_id.isFloorElement){
-                if (cuts::include_floor[current_id.layerIndex] != true){
+                if (cuts::include_floor[current_id.yModule] != true){
                     current_hits.erase(current_hits.begin());
                     continue;
                 }
@@ -81,6 +81,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
                     continue;
                 }
             }
+	    //TODO: INCLUDE A SECTION FOR BACK WALL
             
 			if (e_sum > cuts::SiPM_energy_threshold){
 				physics::digi_hit* current_digi = new physics::digi_hit();
@@ -117,48 +118,20 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 	// now manage hits in the floor and wall
 	for (auto digi : digis){
-	//	std::cout << counter++ << std::endl;
 		auto current_id = digi->det_id;
 
 		auto center = _geometry->GetCenter(current_id);
-		auto layer = _geometry->layer_list[0];
-		auto long_direction_index = layer->long_direction_index;
-		auto uncertainty = layer->uncertainty();
+		auto long_direction_index = current_id.GetLongIndex();
+		auto uncertainty = current_id.uncertainty();
 
 		bool drop_me = false;
 
-		if (current_id.isFloorElement){
-			//if (current_id.isFloorElement) std::cout << digi->hits.size() << std::endl;
-			// uncertainty = _geometry->_floor.uncertainty(current_id.layerIndex);
-			layer = _geometry->layer_list[current_id.layerIndex];
-			uncertainty = layer->uncertainty();
-			long_direction_index = layer->long_direction_index;
-
-			//if (drop_generator.Rndm() > 1.0 / par_handler->par_map["scint_efficiency"]) {
+		if (current_id.isFloorElement || current_id.isWallElement){
 			if (drop_generator.Rndm() < par_handler->par_map["scint_efficiency"]) {
-				//digis_not_dropped.push_back(digi);
 				drop_me = true;
-				//std::cout << "dropped a hit" << std::endl;
 				dropped_hits++;
 			}
 			floor_wall_hits++;
-		}
-		else if (current_id.isWallElement){
-            uncertainty = _geometry->_wall.uncertainty(current_id.zIndex);
-
-			//if (drop_generator.Rndm() > 1.0 / par_handler->par_map["scint_efficiency"]) {
-			if (drop_generator.Rndm() < par_handler->par_map["scint_efficiency"]) {
-				//digis_not_dropped.push_back(digi); // be careful, won't this add the pointer that goes away at the end of the loop?
-				drop_me = true;
-				//std::cout << "dropped a hit" << std::endl;
-				dropped_hits++;
-			}
-			floor_wall_hits++;
-		}
-		else {
-			layer = _geometry->layer_list[current_id.layerIndex];
-			long_direction_index = layer->long_direction_index;
-			uncertainty = layer->uncertainty();
 		}
 
 		double e_sum = 0;
@@ -172,7 +145,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 			t_sum += hit->t * hit->e;
 			y_sum += hit->y * hit->e;
 			x_sum += hit->x * hit->e;
-
+		//TODO: MODIFY THIS FOR THE BACK WALL
 			if (long_direction_index == 0){
 				long_direction_sum += hit->x * hit->e;
 			} else {
@@ -255,11 +228,11 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 		}
 
 		// Position smearing for Tracker && Floor hits
-		if (long_direction_index == 0) {
+		if (long_direction_index == 0) {//x is long direction
 			double smeared_x = digi->x + generator.Gaus(0.0, digi->ex);
 			if (!(_geometry->GetDetID(smeared_x, digi->y, digi->z) == current_id)){
-				if (smeared_x > center[0]) { smeared_x = center[0] + (layer->widths())[0]/2.0 - 0.5*units::cm; }
-				else {smeared_x = center[0] - (layer->widths())[0]/2.0 + 0.5*units::cm; }
+				if (smeared_x > center[0]) {smeared_x = center[0] + (_geometry->GetDimensions(current_id))[0]/2.0 - 0.5*units::cm;}
+				else {smeared_x = center[0] - (_geometry->GetDimensions(current_id))[0]/2.0 + 0.5*units::cm; }
 			}
 
 			digi->x = smeared_x;
@@ -267,8 +240,8 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 		} else if (long_direction_index == 1){
 			double smeared_z = digi->z + generator.Gaus(0.0, digi->ez);
 			if (!(_geometry->GetDetID(digi->x, digi->y, smeared_z) == current_id) ){
-				if (smeared_z > center[2]) {smeared_z = center[2] + (layer->widths())[1]/2.0 - 0.5*units::cm;}
-				else {smeared_z = center[2] - (layer->widths())[1]/2.0 + 0.5*units::cm; }
+				if (smeared_z > center[2]) {smeared_z = center[2] + (_geometry->GetDimensions(current_id))[2]/2.0 - 0.5*units::cm;}
+				else {smeared_z = center[2] - (_geometry->GetDimensions(current_id))[2]/2.0 + 0.5*units::cm; }
 			}
 			digi->z = smeared_z;
 		}

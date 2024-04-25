@@ -42,6 +42,7 @@ private:
         static void layer_detIDs(std::vector<detID>& _detID_list); //adds the detIDs in regular horizontal layers
 	static void wall_detIDs(std::vector<detID>& _detID_list); //adds the detIDs in the vertical wall
 	static void floor_detIDs(std::vector<detID>& _detID_list); //adds the detIDs in the floor 	
+	static void back_detIDs(std::vector<detID>& _detID_list); //adds the detIDs in the back wall
 	
 
 };
