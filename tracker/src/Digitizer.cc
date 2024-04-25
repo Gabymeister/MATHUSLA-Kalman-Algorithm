@@ -167,11 +167,11 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 		// if (current_id.isFloorElement || current_id.isWallElement){
 		if (current_id.isWallElement){
 			digi->z = center[2];
-			if (current_id.zIndex==0){
+			if (current_id.zModule % 2 == 0){
 				digi->x = center[0];
 				digi->y = y_sum/e_sum;
 			}
-			else if (current_id.zIndex==1){
+			else if (current_id.zModule % 2 == 1){
 				digi->x = x_sum/e_sum;
 				digi->y = center[1];
 			}			
@@ -201,7 +201,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 		//--Position smearing for Wall hits 		
 		//--2023-06-30 Tom: turn off
 		if (current_id.isWallElement) {
-			if (current_id.zIndex == 1) {
+			if (current_id.zModule %2 == 0) {
 				double smeared_x = digi->x + generator.Gaus(0.0, digi->ex);
 				if (!(_geometry->GetDetID(smeared_x, digi->y, digi->z) == current_id)){
 					if (smeared_x > center[0]) { smeared_x = center[0] + detector::wall_y_width/2.0 - 0.5*units::cm; }
@@ -209,7 +209,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 				}				
 				digi->x = smeared_x;
 
-			} else if (current_id.zIndex == 0){
+			} else if (current_id.zModule % 2 == 1){
 				double smeared_y = digi->y + generator.Gaus(0.0, digi->ey);
 				if (!(_geometry->GetDetID(digi->x, smeared_y, digi->z) == current_id)){
 					if (smeared_y > center[1]) { smeared_y = center[1] + detector::wall_y_width/2.0 - 0.5*units::cm; }
@@ -226,6 +226,8 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 			continue;
 		}
+
+		//TODO: Add Something for Back Wall hits
 
 		// Position smearing for Tracker && Floor hits
 		if (long_direction_index == 0) {//x is long direction
