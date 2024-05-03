@@ -309,7 +309,6 @@ void NoiseMaker::wall_detIDs(std::vector<detID>& _detID_list, std::vector<double
 			num_x = (int)(length / Geometry->GetWidth());
 			num_y = (int)(height / Geometry->GetLength()) + 1;
 			bar_direction = 1;
-			std::cout << num_y << std::endl;
 		}
 		for (int xIndex = 0; xIndex < num_x; xIndex++) {
 			for (int yIndex = 0; yIndex < num_y; yIndex++) {
