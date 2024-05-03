@@ -30,7 +30,6 @@ public:
 	TRandom3 drop_generator;
 
 	std::vector<physics::digi_hit*> Digitize();
-	Geometry* _geometry;
 
 	void AddHit(physics::sim_hit *hit){
 		if (!hit->det_id.IsNull()) {
@@ -41,17 +40,15 @@ public:
 	}
 
 	void clear(){
-		
 		for (auto hit : hits) delete hit;
 		hits.clear();
 	
 	}
 
-	Digitizer(){ _geometry = new Geometry; }
+	Digitizer(){}
 
 	~Digitizer() 
 	{
-		delete _geometry;
 		for (auto p : hits) delete p;
 	}
 

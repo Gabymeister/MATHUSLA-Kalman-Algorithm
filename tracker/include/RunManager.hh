@@ -1,9 +1,9 @@
 #include <TString.h>
-#include "TrackFinder.hh"
+//#include "TrackFinder.hh"
 #include "TreeHandler.hh"
 #include "Digitizer.hh"
 #include "globals.hh"
-#include "VertexFinder.hh"
+//#include "VertexFinder.hh"
 
 
 #ifndef RUN_MANAGER_DEFINE
@@ -28,14 +28,10 @@ public:
 
 	RunManager(){
 		_digitizer = new Digitizer();
-		_tracker = new TrackFinder();
-		_vertexer = new VertexFinder();
 	}
 
 	~RunManager(){
 		delete _digitizer;
-		delete _tracker;
-		delete _vertexer;
 	}
 
 
@@ -47,8 +43,6 @@ private:
 	TreeHandler* TH;
 
 	Digitizer* _digitizer;
-	TrackFinder* _tracker;
-	VertexFinder* _vertexer;
 
 	//DATA IO NAMES AND FILES
 	TString _InputFile_Name;
@@ -56,6 +50,7 @@ private:
 
 	TString _InputTree_Name = TString("box_run");
 	TString _OutputTree_Name = TString("integral_tree");
+	TString _geomTree_Name = TString("Geometry");
 
 
 

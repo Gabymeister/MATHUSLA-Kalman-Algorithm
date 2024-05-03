@@ -1,14 +1,13 @@
 #include <iostream>
 #include "RunManager.hh"
 #include "TreeHandler.hh"
-#include "TrackFinder.hh"
+#include "NoiseMaker.hh"
 #include "Digitizer.hh"
 #include "globals.hh"
 #include <iostream>
 #include <fstream>
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
-#include "NoiseMaker.hh"
 #include "par_handler.hh"
 
 int RunManager::StartTracking()
@@ -18,6 +17,9 @@ int RunManager::StartTracking()
 		std::cout << "Sorry, I couldn't open that file" << std::endl;
 		return 0;
 	} 
+
+	GeometryHandler _geometry(_geomTree_Name, _InputFile_Name);
+	_geometry.LoadGeometry();
 
 	TH = &_handler;
 	int events_handled = 0;
@@ -40,10 +42,9 @@ int RunManager::StartTracking()
 	if (hndlr.par_map["branch"] == 1.0) std::cout << "Running in Cosmic Mode" << std::endl;
 
 	_digitizer->par_handler = &hndlr;
-	_tracker->par_handler = &hndlr;
-	_vertexer->par_handler = &hndlr;
 
-	NoiseMaker::preDigitizer();
+	NoiseMaker::preDigitizer(&_geometry);
+	std::cout << "Finished preDigitizer" <<std::endl;
 
 	_digitizer->InitGenerators();
 
@@ -63,8 +64,6 @@ int RunManager::StartTracking()
 
 			TotalEventsProcessed++;
 			_digitizer->clear();
-			_tracker->clear();
-			_vertexer->clear();
 
 			// copying the data to the new tree, and loading all the variables, incrementing index
 			TH->LoadEvent();
@@ -83,51 +82,21 @@ int RunManager::StartTracking()
 
 			_digitizer->ev_num = events_handled;
 			std::vector<physics::digi_hit *> digi_list = _digitizer->Digitize();
+			
+			std::vector<physics::digi_hit*> noise_digis;
+			if(NoiseMaker::run){
+                NoiseMaker* noise = new NoiseMaker(digi_list);
+                noise_digis = noise->return_digis();
+				if (noise_digis.size() > 0) {
+				}
+                for(auto digi:noise_digis){
+                        digi_list.push_back(digi);
+                }
+        	}
 
-			TH->ExportDigis(digi_list, _digitizer->seed);
-
-			// digis now finished and stored in tree!!!
-			// now, we begin the seeding algorithm
-
-			// remove this carefully in TrackFinder.cc
-			_tracker->failure_reason = zeros;
-
-			_tracker->hits_k = digi_list;
-			_tracker->Seed();
-			_tracker->FindTracks_kalman();
-
-			// copy kalman tracks for merging
-			for (auto t : _tracker->tracks_k)
-			{
-				physics::track *temp = new physics::track(*t);
-				_tracker->tracks_k_m.push_back(temp);
-			}
-
-			if (hndlr.par_map["merge_cos_theta"] != -2) {
-				_tracker->CalculateMissingHits(_digitizer->_geometry);
-				_tracker->MergeTracks_k();
-			}
-
-			_tracker->CalculateMissingHits(_digitizer->_geometry);
-
-			made_its_k += _tracker->tracks_k_m.size();
-
-			TH->ExportTracks_k_m(_tracker->tracks_k_m);
-
-			_vertexer->tracks_k_m = _tracker->tracks_k_m;
-
-			_vertexer->Seed_k_m();
-			_vertexer->FindVertices_k_m_hybrid();
-
-			//_vertexer->FindVertices_k();
-
-			verts_k_m += _vertexer->vertices_k_m.size();
-
-			TH->ExportVertices_k_m(_vertexer->vertices_k_m);
+			TH->ExportDigis(noise_digis, _digitizer->seed);
 
 			TH->Fill();
-
-			if (_tracker->tracks_k_m.size() > 0) events_w_k_tracks++;
 
 			dropped_hits += _digitizer->dropped_hits;
 			floor_wall_hits += _digitizer->floor_wall_hits;
@@ -139,21 +108,10 @@ int RunManager::StartTracking()
 
 	
 
-	std::cout<<" Vertex failure count\n  noSeeds: "<<_vertexer->noSeeds<<std::endl;
-	std::cout<<"  not converge: "<<_vertexer->noConverge<<std::endl;
-	std::cout<<"  rejected by chi2 cut: "<<_vertexer->missedChi2<<std::endl;
-	std::cout<<"  not enough tracks: "<<_vertexer->failedSeed<<std::endl;
 
 	if (hndlr.file_opened) {
-		std::cout << made_its_k << " Kalman tracks made it" << std::endl;
-		std::cout << verts_k_m << " Merged Kalman vertices made it" << std::endl;
-		std::cout << events_w_k_tracks << " Events had a kalman track" << std::endl;
 
 		TH->Write();
-
-		std::cout << "Tracked " << TotalEventsProcessed << " Events" << std::endl;
-
-//		std::cout << "# Dropped Hits / # Floor Wall Hits = " << (double) dropped_hits / floor_wall_hits;
 
 	}
 

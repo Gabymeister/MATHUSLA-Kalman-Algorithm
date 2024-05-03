@@ -28,86 +28,27 @@ namespace detector{
 	const double ip_z = 0.0;
 
 
-const std::vector<std::vector<double>> MODULE_X = {{-1950.0*cm,-1050.0*cm},
-{-950.0*cm,-50.0*cm},
-{50.0*cm,950.0*cm},
-{1050.0*cm,1950.0*cm},
-};
-
-const std::vector<std::vector<double>> MODULE_Z = {{7000.0*cm,7900*cm},
-{8000.0*cm,8900.0*cm},
-{9000.0*cm,9900.0*cm},
-{10000.0*cm,10900.0*cm},
-};
 
 	const std::vector<double> COSMIC_SHIFT = {0.0, 547*cm, 11950.0*cm}; // shift of sim cosmic -> main coordinates
-	const double surface_height = 8547*units::cm;
-
-const int n_modules = 16;
-const int n_floors = 2;
 	const double scintillator_length = 450.0*units::cm;
 	const double scintillator_width = 4.50*units::cm;
 const double scintillator_height = 1.6*units::cm;
 const double scintillator_thickness = 1.0*units::cm; //Just the sensitive part
 	const double time_resolution = 1.0*units::ns;
 
-	// 2023-04-25: changing to 6 TOP layers. Numbers updated from simulation by print. 
-const std::vector<std::vector<double>> LAYERS_Y={{8550.0*cm,8551.6*cm},
-{8631.6*cm,8633.2*cm},
-{9893.2*cm,9894.8*cm},
-{9974.8*cm,9976.4*cm},
-{10056.4*cm,10058.0*cm},
-{10138.0*cm,10139.6*cm},
-};
 
-	const int n_layers = LAYERS_Y.size();
-
-	const double x_min = MODULE_X[0][0];
-	const double y_min = LAYERS_Y[0][0];
-	const double z_min = MODULE_Z[0][0];
-
-	const double x_max = MODULE_X[MODULE_X.size()-1][1];
-	const double y_max = LAYERS_Y[LAYERS_Y.size()-1][1];
-	const double z_max = MODULE_Z[MODULE_Z.size()-1][1];
-
-	//FLOOR TILE WIDTHS
-
-	const double floor_x_width = scintillator_length; // 50.0*units::cm;
-	const double floor_z_width = scintillator_width; // 50.0*units::cm;
-
-    //WALL TILE WIDTHS
-
-    const double wall_x_width = scintillator_width; // 50.0*units::cm;
-    const double wall_y_width = scintillator_length; // 50.0*units::cm;
-
-    //FRONT WALL PARAMETERS
-
-const double wall_gap = 1.0*units::cm; //gap on each side of wall
-const double wall_gap2 = 100.0*units::cm; //gap between two walls
+const double wall_start_y = 8547*units::cm; //min y value of wall (casing included)
 const double wall_height = 1343.2*units::cm;
-const double wall_start_y = y_min - 3*units::cm; //min y value of wall (casing included)
-const std::vector<std::vector<double>> FRONT_WALL_Z{{9895.8*cm,9897.4*cm},
-{9997.4*cm, 6999.0*cm}
-};
-const int n_walls = FRONT_WALL_Z.size();
-    //FOR statistics.hh ONLY - NEW MIN Z WITH WALL
-    const double z_min_wall = z_min - wall_gap - scintillator_height;
-
-    //BACK WALL PARAMETERS
-    const double back_wall_top = LAYERS_Y[0][0];
-    const double back_wall_bottom = LAYERS_Y[0][0] - (MODULE_X[0][1] - MODULE_X[0][0]); //1 module thickness down from bottom of tracking layers
-    const std::vector<std::vector<double>> BACK_WALL_Z{{13900.0*cm,13901.6*cm},
-    {13981.6*cm,13983.2*cm},
-    {14063.2*cm,14064.8*cm},
-    {14144.8*cm,14146.4*cm},
-    };
-    const double n_back_walls = BACK_WALL_Z.size();
+const int n_walls = 2;
+const int n_floors = 2;
+const int n_layers = 4;
+const int n_back = n_layers; 
 };
 
 namespace constants{
 
 	const double c = 29.97*units::cm/units::ns;
-	const double optic_fiber_n = 1.580; //2023.5.3 Tom: change from 1.5->1.58 according to sim. estimate for the optical fiber index of refraction
+	const double optic_fiber_n = 1.580*units::cm; //2023.5.3 Tom: change from 1.5->1.58 according to sim. estimate for the optical fiber index of refraction
 
 };
 

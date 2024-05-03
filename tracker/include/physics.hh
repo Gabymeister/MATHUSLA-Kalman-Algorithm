@@ -2,10 +2,10 @@
 #include <TLorentzVector.h>
 #include "Geometry.hh"
 #include "globals.hh"
+#include "LinearAlgebra.hh"
 #include "TFitter.h"
 #include "TMatrix.h"
 #include "TMatrixD.h"
-#include "LinearAlgebra.hh"
 #include <Eigen/Dense>
 
 #ifndef PHYSICS_DEFINE
@@ -35,9 +35,9 @@ namespace physics{
             pdg_id = (*(tm->sim_hit_particlePdgId))[n]; //[0];
             track_id = (*(tm->sim_hit_G4TrackId))[n]; //[0];
             particle_parent_trackid = (*(tm->sim_hit_G4ParentTrackId))[n]; //[0];
-	    det_id = detID((*(tm->sim_hit_xMod))[n], (*(tm->sim_hit_xIndex))[n],
-	    (*(tm->sim_hit_yMod))[n], (*(tm->sim_hit_yIndex))[n],
-	    (*(tm->sim_hit_zMod))[n], (*(tm->sim_hit_zIndex))[n]);
+	    det_id = detID((*(tm->sim_hit_center1))[n], (*(tm->sim_hit_center2))[n],
+	    (*(tm->sim_hit_bar_direction))[n], (*(tm->sim_hit_allignment))[n],
+	    (*(tm->sim_hit_layerID))[n]);
         }
 
 		sim_hit(int index, double x, double y, double z, double t, double e){

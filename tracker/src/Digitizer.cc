@@ -1,5 +1,5 @@
 #include "Digitizer.hh"
-#include "NoiseMaker.hh"
+//#include "NoiseMaker.hh"
 #include "physics.hh"
 #include "globals.hh"
 #include <TRandom.h>
@@ -68,20 +68,7 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
             
             // ignoring all hits in ignored floors/walls or above wall y cut
             
-            auto current_center = _geometry->GetCenter(current_id);
-            if (current_id.isFloorElement){
-                if (cuts::include_floor[current_id.yModule] != true){
-                    current_hits.erase(current_hits.begin());
-                    continue;
-                }
-            }
-            if (current_id.isWallElement){
-                if (cuts::include_wall != true || current_center[1] > cuts::wall_y_cut){
-                    current_hits.erase(current_hits.begin());
-                    continue;
-                }
-            }
-	    //TODO: INCLUDE A SECTION FOR BACK WALL
+            auto current_center = current_id.GetCenter();
             
 			if (e_sum > cuts::SiPM_energy_threshold){
 				physics::digi_hit* current_digi = new physics::digi_hit();
@@ -120,19 +107,11 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 	for (auto digi : digis){
 		auto current_id = digi->det_id;
 
-		auto center = _geometry->GetCenter(current_id);
+		auto center = current_id.GetCenter();
 		auto long_direction_index = current_id.GetLongIndex();
 		auto uncertainty = current_id.uncertainty();
 
-		bool drop_me = false;
-
-		if (current_id.isFloorElement || current_id.isWallElement){
-			if (drop_generator.Rndm() < par_handler->par_map["scint_efficiency"]) {
-				drop_me = true;
-				dropped_hits++;
-			}
-			floor_wall_hits++;
-		}
+	   //first IDs are the veto layers	
 
 		double e_sum = 0;
 		double long_direction_sum = 0.0;
@@ -145,10 +124,11 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 			t_sum += hit->t * hit->e;
 			y_sum += hit->y * hit->e;
 			x_sum += hit->x * hit->e;
-		//TODO: MODIFY THIS FOR THE BACK WALL
 			if (long_direction_index == 0){
 				long_direction_sum += hit->x * hit->e;
-			} else {
+			} else if (long_direction_index == 1) {
+				long_direction_sum += hit->y * hit->e;
+			} else if (long_direction_index == 2) {
 				long_direction_sum += hit->z * hit->e;
 			}
 		}
@@ -165,26 +145,25 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 		// Floor and tracking layers: to the center of each bar
 		//note: et is the same for all of them and is set in the digi class defintion
 		// if (current_id.isFloorElement || current_id.isWallElement){
-		if (current_id.isWallElement){
-			digi->z = center[2];
-			if (current_id.zModule % 2 == 0){
+		if (current_id.allignment == 1){//vertical
+			digi->z = center[1];
+			if (long_direction_index == 0){
+				digi->x = long_direction_sum/e_sum;
+				digi->y = center[0];
+			} else {// y is long direction
 				digi->x = center[0];
-				digi->y = y_sum/e_sum;
-			}
-			else if (current_id.zModule % 2 == 1){
-				digi->x = x_sum/e_sum;
-				digi->y = center[1];
+				digi->y = long_direction_sum/e_sum;
 			}			
 
-	    } 
-		else {
-			digi->y = center[1];
+	    } else {//horizontal
 		    if (long_direction_index == 0){
 				digi->x = long_direction_sum/e_sum;
-				digi->z = center[2];
-			} else {
-				digi->z= long_direction_sum/e_sum;
+				digi->y = center[0];
+				digi->z = center[1];
+			} else {// z is long direction
 				digi->x = center[0];
+				digi->y = center[1];
+				digi->z= long_direction_sum/e_sum;
 			}
 		}
 		digi->long_direction_index = long_direction_index;
@@ -200,75 +179,30 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 		//--Position smearing for Wall hits 		
 		//--2023-06-30 Tom: turn off
-		if (current_id.isWallElement) {
-			if (current_id.zModule %2 == 0) {
+		if (current_id.allignment == 1) {
+			if (long_direction_index == 0) {
 				double smeared_x = digi->x + generator.Gaus(0.0, digi->ex);
-				if (!(_geometry->GetDetID(smeared_x, digi->y, digi->z) == current_id)){
-					if (smeared_x > center[0]) { smeared_x = center[0] + detector::wall_y_width/2.0 - 0.5*units::cm; }
-					else {smeared_x = center[0] - detector::wall_y_width/2.0 + 0.5*units::cm; }
-				}				
 				digi->x = smeared_x;
-
-			} else if (current_id.zModule % 2 == 1){
+			} else if (long_direction_index == 1){
 				double smeared_y = digi->y + generator.Gaus(0.0, digi->ey);
-				if (!(_geometry->GetDetID(digi->x, smeared_y, digi->z) == current_id)){
-					if (smeared_y > center[1]) { smeared_y = center[1] + detector::wall_y_width/2.0 - 0.5*units::cm; }
-					else {smeared_y = center[1] - detector::wall_y_width/2.0 + 0.5*units::cm; }
-				}						
 				digi->y = smeared_y;
 			}
-
-			if (!drop_me) { // it's a wall hit
-				digis_not_dropped.push_back(digi);
-				// std::cout<< digi->x <<", "<< digi->y <<", "<< digi->z <<std::endl;
-			}
-			// else	std::cout << "dropped a wall hit" << std::endl;
-
-			continue;
-		}
-
-		//TODO: Add Something for Back Wall hits
+			digis_not_dropped.push_back(digi);
 
 		// Position smearing for Tracker && Floor hits
-		if (long_direction_index == 0) {//x is long direction
+		} else if (long_direction_index == 0) {
 			double smeared_x = digi->x + generator.Gaus(0.0, digi->ex);
-			if (!(_geometry->GetDetID(smeared_x, digi->y, digi->z) == current_id)){
-				if (smeared_x > center[0]) {smeared_x = center[0] + (_geometry->GetDimensions(current_id))[0]/2.0 - 0.5*units::cm;}
-				else {smeared_x = center[0] - (_geometry->GetDimensions(current_id))[0]/2.0 + 0.5*units::cm; }
-			}
-
 			digi->x = smeared_x;
-
-		} else if (long_direction_index == 1){
+		} else if (long_direction_index == 2) {
 			double smeared_z = digi->z + generator.Gaus(0.0, digi->ez);
-			if (!(_geometry->GetDetID(digi->x, digi->y, smeared_z) == current_id) ){
-				if (smeared_z > center[2]) {smeared_z = center[2] + (_geometry->GetDimensions(current_id))[2]/2.0 - 0.5*units::cm;}
-				else {smeared_z = center[2] - (_geometry->GetDimensions(current_id))[2]/2.0 + 0.5*units::cm; }
-			}
 			digi->z = smeared_z;
 		}
 
-		if ( !(_geometry->GetDetID(digi->x, digi->y, digi->z) == current_id) ){
-			std::cout << "Warning!!! Smearing function error--digi was smeared to be outside of known detector element!!" << std::endl;
-			// std::cout<<long_direction_index<<std::endl;
-			// 	std::cout<< digi->x <<", "<< digi->y <<", "<< digi->z <<" " << _geometry->_floor.GetFloorIndex(digi->x,digi-> y, digi->z)[0]<<" "<< _geometry->_floor.GetFloorIndex(digi->x,digi-> y, digi->z)[1]<<std::endl;
-			// 	std::cout<< center[0] <<", "<<  center[1] <<", "<<  center[2]  <<" " << _geometry->_floor.GetFloorIndex(center[0],center[1],center[2])[0]<<" "<< _geometry->_floor.GetFloorIndex(center[0],center[1],center[2])[1]<<std::endl;
-		}
 
-		//if (!drop_me) {
 		digis_not_dropped.push_back(digi); // it's a tracking / trigger layer hit, so it will never be dropped
-		//}
-		//else std::cout << "dropped a hit" << std::endl;
 	}
 
 	digis = digis_not_dropped; // only keep hits not dropped by inefficiency in the floor or wall
-    if(NoiseMaker::run){
-                NoiseMaker* noise = new NoiseMaker(digis);
-                std::vector<physics::digi_hit*> noise_digis = noise->return_digis();
-                for(auto digi:noise_digis){
-                        digis.push_back(digi);
-                }
-        }
 	//setting digi indices
 	int k = 0;
 	for (auto digi : digis) {
