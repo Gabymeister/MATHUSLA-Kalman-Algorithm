@@ -94,7 +94,7 @@ int RunManager::StartTracking()
                 }
         	}
 
-			TH->ExportDigis(noise_digis, _digitizer->seed);
+			TH->ExportDigis(digi_list, _digitizer->seed);
 
 			TH->Fill();
 

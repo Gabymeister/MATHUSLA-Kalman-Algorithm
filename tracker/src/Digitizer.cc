@@ -95,10 +95,10 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 	int counter = 0;
 
-	struct timeval curTime;
-	gettimeofday(&curTime, NULL);
-	long int micro_sec = curTime.tv_usec;
-	srand( micro_sec );
+//	struct timeval curTime;
+//	gettimeofday(&curTime, NULL);
+//	long int micro_sec = curTime.tv_usec;
+//	srand( micro_sec );
 
 	// Now we throw out hits in the floor and wall to simulate reduced detector efficiency
 	std::vector<physics::digi_hit*> digis_not_dropped;
@@ -135,7 +135,6 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 
 		digi->e = e_sum;
 		digi->t = t_sum/e_sum;
-		//digi->y = y_sum/e_sum;
 		digi->ex = uncertainty[0];
 		digi->ey = uncertainty[1];
 		digi->ez = uncertainty[2];
@@ -187,8 +186,6 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 				double smeared_y = digi->y + generator.Gaus(0.0, digi->ey);
 				digi->y = smeared_y;
 			}
-			digis_not_dropped.push_back(digi);
-
 		// Position smearing for Tracker && Floor hits
 		} else if (long_direction_index == 0) {
 			double smeared_x = digi->x + generator.Gaus(0.0, digi->ex);
@@ -197,8 +194,6 @@ std::vector<physics::digi_hit*> Digitizer::Digitize(){
 			double smeared_z = digi->z + generator.Gaus(0.0, digi->ez);
 			digi->z = smeared_z;
 		}
-
-
 		digis_not_dropped.push_back(digi); // it's a tracking / trigger layer hit, so it will never be dropped
 	}
 

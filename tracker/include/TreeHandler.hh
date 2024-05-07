@@ -164,6 +164,7 @@ public:
 		OutputTree->Branch("Digi_bar_direction", &digi_bar_direction);
 		OutputTree->Branch("Digi_allignment", &digi_allignment);
 		OutputTree->Branch("Digi_layer_id", &digi_LayerID);
+		OutputTree->Branch("Digi_det_id", &digi_detID);
         OutputTree->Branch("Digi_seed", &digi_seed, "Digi_seed/L");
         OutputTree->Branch("Digi_hitIndices", &digi_hit_indices);
 
@@ -261,6 +262,7 @@ public:
 	std::vector<int> digi_bar_direction;
 	std::vector<int> digi_allignment;
 	std::vector<int> digi_LayerID;
+	std::vector<int> digi_detID;
   	std::vector<int> digi_hit_indices;
   	std::vector<int> Digi_numHits;
     long long int digi_seed;
@@ -287,6 +289,7 @@ void TreeHandler::ExportDigis(std::vector<digi_hit*> digi_list, long long int se
 	  digi_bar_direction.clear();
 	  digi_allignment.clear();
 	  digi_LayerID.clear();
+	  digi_detID.clear();
       
       digi_seed = seed;
 
@@ -308,6 +311,7 @@ void TreeHandler::ExportDigis(std::vector<digi_hit*> digi_list, long long int se
 		digi_bar_direction.push_back(digi->det_id.bar_direction);
 		digi_allignment.push_back(digi->det_id.allignment);
 		digi_LayerID.push_back(digi->det_id.layerID);
+		digi_detID.push_back(digi->det_id.detectorID);
         for (auto hit : digi->hits){
           digi_hit_indices.push_back(hit->index);
         }
